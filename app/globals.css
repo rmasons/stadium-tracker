@@ -1,0 +1,68 @@
+@import "tailwindcss";
+
+:root {
+  --background: #f8fafc; /* slate-50 */
+  --foreground: #0f172a; /* slate-900 */
+  --card: #ffffff;
+  --border: #e2e8f0; /* slate-200 */
+  --muted: #64748b; /* slate-500 */
+  --mlb: #2563eb; /* blue-600 */
+  --nfl: #dc2626; /* red-600 */
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-border: var(--border);
+  --color-muted: var(--muted);
+  --color-mlb: var(--mlb);
+  --color-nfl: var(--nfl);
+}
+
+html,
+body {
+  height: 100%;
+}
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+  font-family:
+    ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, Helvetica,
+    Arial, sans-serif;
+}
+
+/* --- Map markers ------------------------------------------------------- */
+.stadium-marker {
+  width: 16px;
+  height: 16px;
+  border-radius: 9999px;
+  border: 2px solid #ffffff;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.4);
+  cursor: pointer;
+  transition:
+    transform 0.12s ease,
+    box-shadow 0.12s ease;
+}
+.stadium-marker:hover {
+  transform: scale(1.35);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.5);
+}
+.stadium-marker--visited {
+  width: 20px;
+  height: 20px;
+  border-width: 3px;
+}
+.stadium-marker--selected {
+  transform: scale(1.5);
+  outline: 2px solid var(--foreground);
+  outline-offset: 1px;
+}
+
+/* Mapbox popups inherit our type. */
+.mapboxgl-popup-content {
+  font-family: inherit;
+  border-radius: 0.5rem;
+  padding: 0.5rem 0.75rem;
+}

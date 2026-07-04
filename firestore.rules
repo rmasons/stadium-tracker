@@ -1,0 +1,59 @@
+rules_version = '2';
+
+// Security model for the stadium tracker.
+//
+// Trackers are meant to be shareable, so profiles and visits are world-READABLE.
+// Writes are locked to the authenticated owner. The public `users/{uid}` doc is
+// kept PII-free by rule (only username/displayName/photoURL may be stored) so a
+// share page can never leak the owner's email.
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function isOwner(uid) {
+      return request.auth != null && request.auth.uid == uid;
+    }
+
+    function validProfile(data) {
+      return data.keys().hasOnly(['username', 'displayName', 'photoURL'])
+        && data.username is string
+        && data.username.size() >= 3
+        && data.username.size() <= 30
+        && data.displayName is string
+        && data.photoURL is string;
+    }
+
+    // Public profile. World-readable; only the owner may write, and only the
+    // three allowed, non-PII fields.
+    match /users/{uid} {
+      allow read: if true;
+      allow create, update: if isOwner(uid) && validProfile(request.resource.data);
+      allow delete: if false;
+
+      // A user's stadium visits — world-readable (share page), owner-writable.
+      match /visits/{stadiumId} {
+        allow read: if true;
+        allow create, update: if isOwner(uid)
+          && request.resource.data.stadiumId == stadiumId
+          && request.resource.data.league in ['MLB', 'NFL']
+          && request.resource.data.date is string
+          && request.resource.data.opponent is string;
+        allow delete: if isOwner(uid);
+      }
+    }
+
+    // Username registry: usernames/{username} -> { uid }. Used for uniqueness
+    // and to resolve a share URL to a uid.
+    match /usernames/{username} {
+      allow read: if true;
+      // Claim: the doc must not already exist (create), hold only { uid }, and
+      // point to the caller. This is what makes usernames unique.
+      allow create: if request.auth != null
+        && request.resource.data.keys().hasOnly(['uid'])
+        && request.resource.data.uid == request.auth.uid;
+      // Release a handle you own (used when renaming).
+      allow delete: if request.auth != null
+        && resource.data.uid == request.auth.uid;
+      allow update: if false;
+    }
+  }
+}
