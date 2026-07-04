@@ -15,6 +15,9 @@ export default function HomePage() {
 
   useEffect(() => {
     if (!user) {
+      // Clear another user's data on sign-out. Intentional reset on dependency
+      // change, not a render-time cascade.
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setVisits({});
       return;
     }
@@ -75,6 +78,7 @@ export default function HomePage() {
       {selected && (
         <aside className="absolute inset-x-0 bottom-0 z-10 h-[60%] border-t border-border shadow-xl md:inset-y-0 md:left-auto md:right-0 md:h-full md:w-96 md:border-l md:border-t-0">
           <StadiumDetail
+            key={selected.id}
             stadium={selected}
             visit={visits[selected.id]}
             canEdit={!!user}

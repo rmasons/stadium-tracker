@@ -16,11 +16,14 @@ export default function TrackerPage() {
   const [copied, setCopied] = useState(false);
 
   useEffect(() => {
+    // window.location is only available on the client, after mount.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setOrigin(window.location.origin);
   }, []);
 
   useEffect(() => {
     if (!user) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setVisits([]);
       return;
     }
@@ -86,6 +89,7 @@ export default function TrackerPage() {
       {profile && (
         <div className="mt-6 rounded-lg border border-border bg-card p-4">
           <UsernameEditor
+            key={profile.username}
             current={profile.username}
             onSave={async (next) => {
               await setUsername(user.uid, profile.username, next);
@@ -135,11 +139,11 @@ function UsernameEditor({
   current: string;
   onSave: (next: string) => Promise<void>;
 }) {
+  // Seeded from `current`; the parent remounts this editor (key={username})
+  // whenever the saved username changes, so the input stays in sync.
   const [value, setValue] = useState(current);
   const [busy, setBusy] = useState(false);
   const [msg, setMsg] = useState<string | null>(null);
-
-  useEffect(() => setValue(current), [current]);
 
   async function save() {
     if (value === current) return;

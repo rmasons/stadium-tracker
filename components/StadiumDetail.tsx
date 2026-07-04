@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { LEAGUE_COLORS } from "@/lib/stadiums";
 import type { Stadium, Visit } from "@/lib/types";
 
@@ -22,17 +22,13 @@ export function StadiumDetail({
   onSave,
   onRemove,
 }: Props) {
-  const [date, setDate] = useState("");
-  const [opponent, setOpponent] = useState("");
+  // Form state is seeded from the current visit. The parent remounts this
+  // component (key={stadium.id}) when a different stadium is selected, so the
+  // form always starts fresh for the newly selected stadium.
+  const [date, setDate] = useState(visit?.date ?? "");
+  const [opponent, setOpponent] = useState(visit?.opponent ?? "");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
-
-  // Reset the form whenever the selected stadium or its visit changes.
-  useEffect(() => {
-    setDate(visit?.date ?? "");
-    setOpponent(visit?.opponent ?? "");
-    setError(null);
-  }, [stadium.id, visit?.date, visit?.opponent]);
 
   async function handleSave() {
     setBusy(true);

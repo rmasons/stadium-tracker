@@ -20,7 +20,9 @@ export function StadiumMap({ visitedIds, selectedId, onSelect }: Props) {
   const markersRef = useRef<Record<string, HTMLElement>>({});
   // Latest onSelect without re-running the (expensive) init effect.
   const onSelectRef = useRef(onSelect);
-  onSelectRef.current = onSelect;
+  useEffect(() => {
+    onSelectRef.current = onSelect;
+  });
 
   // Initialize the map + markers once.
   useEffect(() => {
