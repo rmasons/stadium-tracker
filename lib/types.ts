@@ -18,18 +18,25 @@ export interface Stadium {
   lng: number;
 }
 
-/** A user's record that they have visited a given stadium. One per stadium
- *  (keyed by stadiumId in Firestore). Repeat visits are out of scope for now. */
-export interface Visit {
+/** The stored fields of a visit (the Firestore document data). A stadium can
+ *  have any number of visits — each is its own auto-id document. */
+export interface VisitData {
   stadiumId: string;
   league: League;
-  /** ISO date string (YYYY-MM-DD) of the visit. Optional — a user may mark a
-   *  stadium visited without remembering the exact date. */
+  /** ISO date string (YYYY-MM-DD) of the visit. Optional — a user may log a
+   *  visit without remembering the exact date. */
   date: string;
   /** Opposing team the user saw play, free text. Optional. */
   opponent: string;
-  /** Millis since epoch of the last write, for ordering. */
+  /** Millis since epoch when the visit was first logged. */
+  createdAt: number;
+  /** Millis since epoch of the last write. */
   updatedAt: number;
+}
+
+/** A visit with its Firestore document id attached (as read back). */
+export interface Visit extends VisitData {
+  id: string;
 }
 
 /** The public profile stored at users/{uid}. Deliberately PII-free — this doc

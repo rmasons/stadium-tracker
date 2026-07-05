@@ -4,7 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import { StadiumMap } from "@/components/StadiumMap";
 import { StadiumDetail } from "@/components/StadiumDetail";
 import { useAuth } from "@/components/AuthProvider";
-import { subscribeToVisits, saveVisit, removeVisit } from "@/lib/visits";
+import { subscribeToVisits, addVisit, removeVisit } from "@/lib/visits";
 import { summarize } from "@/lib/stats";
 import type { League, Stadium, Visit } from "@/lib/types";
 
@@ -12,7 +12,7 @@ type LeagueFilter = League | "ALL";
 
 export default function HomePage() {
   const { user, configured } = useAuth();
-  const [visits, setVisits] = useState<Record<string, Visit>>({});
+  const [visits, setVisits] = useState<Visit[]>([]);
   const [selected, setSelected] = useState<Stadium | null>(null);
   const [leagueFilter, setLeagueFilter] = useState<LeagueFilter>("ALL");
 
@@ -21,27 +21,30 @@ export default function HomePage() {
       // Clear another user's data on sign-out. Intentional reset on dependency
       // change, not a render-time cascade.
       // eslint-disable-next-line react-hooks/set-state-in-effect
-      setVisits({});
+      setVisits([]);
       return;
     }
-    return subscribeToVisits(user.uid, (list) => {
-      const next: Record<string, Visit> = {};
-      for (const v of list) next[v.stadiumId] = v;
-      setVisits(next);
-    });
+    return subscribeToVisits(user.uid, setVisits);
   }, [user]);
 
-  const visitedIds = useMemo(() => new Set(Object.keys(visits)), [visits]);
-  const summary = useMemo(() => summarize(Object.values(visits)), [visits]);
+  const visitedIds = useMemo(
+    () => new Set(visits.map((v) => v.stadiumId)),
+    [visits],
+  );
+  const summary = useMemo(() => summarize(visits), [visits]);
+  const selectedVisits = useMemo(
+    () => (selected ? visits.filter((v) => v.stadiumId === selected.id) : []),
+    [visits, selected],
+  );
 
-  async function handleSave(input: { date: string; opponent: string }) {
+  async function handleAdd(input: { date: string; opponent: string }) {
     if (!user || !selected) return;
-    await saveVisit(user.uid, { stadiumId: selected.id, ...input });
+    await addVisit(user.uid, { stadiumId: selected.id, ...input });
   }
 
-  async function handleRemove() {
-    if (!user || !selected) return;
-    await removeVisit(user.uid, selected.id);
+  async function handleRemove(visitId: string) {
+    if (!user) return;
+    await removeVisit(user.uid, visitId);
   }
 
   return (
@@ -116,10 +119,10 @@ export default function HomePage() {
           <StadiumDetail
             key={selected.id}
             stadium={selected}
-            visit={visits[selected.id]}
+            visits={selectedVisits}
             canEdit={!!user}
             onClose={() => setSelected(null)}
-            onSave={handleSave}
+            onAdd={handleAdd}
             onRemove={handleRemove}
           />
         </aside>

@@ -30,11 +30,19 @@ service cloud.firestore {
       allow delete: if false;
 
       // A user's stadium visits — world-readable (share page), owner-writable.
-      match /visits/{stadiumId} {
+      // Each visit is its own auto-id doc, so a stadium can be logged many
+      // times; stadiumId is a field, not the document id.
+      match /visits/{visitId} {
         allow read: if true;
-        allow create, update: if isOwner(uid)
-          && request.resource.data.stadiumId == stadiumId
+        allow create: if isOwner(uid)
+          && request.resource.data.stadiumId is string
+          && request.resource.data.stadiumId.size() > 0
           && request.resource.data.league in ['MLB', 'NFL']
+          && request.resource.data.date is string
+          && request.resource.data.opponent is string;
+        // Updates may not move a visit to a different stadium.
+        allow update: if isOwner(uid)
+          && request.resource.data.stadiumId == resource.data.stadiumId
           && request.resource.data.date is string
           && request.resource.data.opponent is string;
         allow delete: if isOwner(uid);

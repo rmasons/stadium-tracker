@@ -77,6 +77,12 @@ export default function TrackerPage() {
           <strong className="text-foreground">{summary.total}</strong> of{" "}
           {summary.overallTotal} ({summary.percent}%)
         </span>
+        {summary.totalVisits > summary.total && (
+          <span>
+            <strong className="text-foreground">{summary.totalVisits}</strong>{" "}
+            visits logged
+          </span>
+        )}
       </div>
       <div
         className="mt-3 h-2 w-full max-w-md overflow-hidden rounded-full bg-border"
@@ -148,7 +154,7 @@ export default function TrackerPage() {
         <VisitedList
           visits={visits}
           editable
-          onRemove={(stadiumId) => void removeVisit(user.uid, stadiumId)}
+          onRemove={(visitId) => void removeVisit(user.uid, visitId)}
         />
       </div>
     </PageShell>

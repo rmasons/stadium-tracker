@@ -6,35 +6,38 @@ import type { Stadium, Visit } from "@/lib/types";
 
 interface Props {
   stadium: Stadium;
-  visit?: Visit;
+  /** All of the viewer's visits to THIS stadium (may be empty). */
+  visits: Visit[];
   /** True when the viewer is signed in and can edit their own visits. */
   canEdit: boolean;
   onClose: () => void;
-  onSave: (input: { date: string; opponent: string }) => Promise<void>;
-  onRemove: () => Promise<void>;
+  onAdd: (input: { date: string; opponent: string }) => Promise<void>;
+  onRemove: (visitId: string) => Promise<void>;
 }
 
 export function StadiumDetail({
   stadium,
-  visit,
+  visits,
   canEdit,
   onClose,
-  onSave,
+  onAdd,
   onRemove,
 }: Props) {
-  // Form state is seeded from the current visit. The parent remounts this
-  // component (key={stadium.id}) when a different stadium is selected, so the
-  // form always starts fresh for the newly selected stadium.
-  const [date, setDate] = useState(visit?.date ?? "");
-  const [opponent, setOpponent] = useState(visit?.opponent ?? "");
+  const [date, setDate] = useState("");
+  const [opponent, setOpponent] = useState("");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  async function handleSave() {
+  // Most recent visit first.
+  const ordered = [...visits].sort((a, b) => b.createdAt - a.createdAt);
+
+  async function handleAdd() {
     setBusy(true);
     setError(null);
     try {
-      await onSave({ date, opponent });
+      await onAdd({ date, opponent });
+      setDate("");
+      setOpponent("");
     } catch (err) {
       setError(err instanceof Error ? err.message : "Something went wrong.");
     } finally {
@@ -42,11 +45,11 @@ export function StadiumDetail({
     }
   }
 
-  async function handleRemove() {
+  async function handleRemove(visitId: string) {
     setBusy(true);
     setError(null);
     try {
-      await onRemove();
+      await onRemove(visitId);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Something went wrong.");
     } finally {
@@ -81,19 +84,49 @@ export function StadiumDetail({
         </button>
       </div>
 
-      <div className="flex-1 overflow-y-auto p-4">
-        {canEdit ? (
-          <div className="space-y-4">
-            {visit ? (
-              <p className="rounded-md bg-background px-3 py-2 text-sm">
-                ✓ You&apos;ve been here.
-              </p>
-            ) : (
-              <p className="text-sm text-muted">
-                Mark that you&apos;ve visited this stadium and log the details.
-              </p>
-            )}
+      <div className="flex-1 space-y-4 overflow-y-auto p-4">
+        {/* Existing visits */}
+        {ordered.length > 0 && (
+          <div>
+            <p className="mb-2 text-sm font-medium">
+              {ordered.length === 1
+                ? "You've been here once"
+                : `You've been here ${ordered.length} times`}
+            </p>
+            <ul className="space-y-2">
+              {ordered.map((v) => (
+                <li
+                  key={v.id}
+                  className="flex items-center justify-between rounded-md bg-background px-3 py-2 text-sm"
+                >
+                  <span>
+                    {v.date || "Date unknown"}
+                    {v.opponent && (
+                      <span className="text-muted"> · vs {v.opponent}</span>
+                    )}
+                  </span>
+                  {canEdit && (
+                    <button
+                      onClick={() => void handleRemove(v.id)}
+                      disabled={busy}
+                      aria-label="Remove visit"
+                      className="ml-2 rounded px-1.5 text-muted hover:bg-border hover:text-foreground disabled:opacity-40"
+                    >
+                      ✕
+                    </button>
+                  )}
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
 
+        {/* Add a visit */}
+        {canEdit ? (
+          <div className="space-y-3 border-t border-border pt-4">
+            <p className="text-sm font-medium">
+              {ordered.length > 0 ? "Log another visit" : "Log a visit"}
+            </p>
             <label className="block text-sm">
               <span className="mb-1 block font-medium">Date visited</span>
               <input
@@ -103,7 +136,6 @@ export function StadiumDetail({
                 className="w-full rounded-md border border-border bg-background px-3 py-2"
               />
             </label>
-
             <label className="block text-sm">
               <span className="mb-1 block font-medium">Opponent</span>
               <input
@@ -117,30 +149,21 @@ export function StadiumDetail({
 
             {error && <p className="text-sm text-nfl">{error}</p>}
 
-            <div className="flex gap-2">
-              <button
-                onClick={() => void handleSave()}
-                disabled={busy}
-                className="flex-1 rounded-md bg-foreground px-3 py-2 text-sm font-medium text-background hover:opacity-90 disabled:opacity-40"
-              >
-                {visit ? "Update visit" : "I've been here"}
-              </button>
-              {visit && (
-                <button
-                  onClick={() => void handleRemove()}
-                  disabled={busy}
-                  className="rounded-md border border-border px-3 py-2 text-sm font-medium hover:bg-background disabled:opacity-40"
-                >
-                  Remove
-                </button>
-              )}
-            </div>
+            <button
+              onClick={() => void handleAdd()}
+              disabled={busy}
+              className="w-full rounded-md bg-foreground px-3 py-2 text-sm font-medium text-background hover:opacity-90 disabled:opacity-40"
+            >
+              {ordered.length > 0 ? "Add visit" : "I've been here"}
+            </button>
           </div>
         ) : (
-          <p className="text-sm text-muted">
-            Sign in with Google to mark this stadium visited and log the date and
-            opponent.
-          </p>
+          ordered.length === 0 && (
+            <p className="text-sm text-muted">
+              Sign in with Google to log a visit to this stadium with the date
+              and opponent.
+            </p>
+          )
         )}
       </div>
     </div>

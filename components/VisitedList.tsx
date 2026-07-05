@@ -8,7 +8,7 @@ import type { Visit } from "@/lib/types";
 interface Props {
   visits: Visit[];
   editable?: boolean;
-  onRemove?: (stadiumId: string) => void;
+  onRemove?: (visitId: string) => void;
 }
 
 const COLUMNS: { key: SortKey; label: string }[] = [
@@ -70,7 +70,7 @@ export function VisitedList({ visits, editable = false, onRemove }: Props) {
         <tbody>
           {rows.map((row) => (
             <tr
-              key={row.visit.stadiumId}
+              key={row.visit.id}
               className="border-b border-border last:border-0"
             >
               <td className="px-3 py-2">
@@ -91,7 +91,7 @@ export function VisitedList({ visits, editable = false, onRemove }: Props) {
               {editable && (
                 <td className="px-3 py-2 text-right">
                   <button
-                    onClick={() => onRemove?.(row.visit.stadiumId)}
+                    onClick={() => onRemove?.(row.visit.id)}
                     className="rounded border border-border px-2 py-1 text-xs hover:bg-background"
                   >
                     Remove

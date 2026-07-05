@@ -6,7 +6,8 @@ each visit, and share a public map of your trackers with friends.
 - **Map** of all **30 MLB + 32 NFL** stadiums across the US & Canada, pins
   color-coded by league (MLB blue, NFL red), with an **All / MLB / NFL filter**.
 - **Google sign-in** via Firebase Auth.
-- Click a pin → **mark "I've been here"**, log the date and opponent.
+- Click a pin → **log a visit** (date + opponent). Been more than once?
+  **Log repeat visits** — each is its own record.
 - **My Tracker** — a sortable list, **completion progress bar**, and per-league
   counts.
 - **Share URL** — every user gets a public read-only page at `/u/[username]`,
@@ -129,12 +130,14 @@ NEXT_PUBLIC_MAPBOX_TOKEN=
 ## 7. Data model
 
 ```
-users/{uid}                       # public profile — { username, displayName, photoURL }  (PII-free)
-users/{uid}/visits/{stadiumId}    # a visit — { stadiumId, league, date, opponent, updatedAt }
-usernames/{username}              # uniqueness + share-URL lookup — { uid }
+users/{uid}                     # public profile — { username, displayName, photoURL }  (PII-free)
+users/{uid}/visits/{visitId}    # a visit — { stadiumId, league, date, opponent, createdAt, updatedAt }
+usernames/{username}            # uniqueness + share-URL lookup — { uid }
 ```
 
-- One visit document **per stadium** (keyed by `stadiumId`).
+- Each visit is its own **auto-id document**, so a stadium can be logged any
+  number of times. Completion counts distinct stadiums; `totalVisits` counts
+  every record.
 - `usernames/{username}` acts as a uniqueness lock and lets `/u/[username]`
   resolve a handle to a uid. Renaming a username is an atomic transaction.
 - The two NFL venues shared by two teams (MetLife → Giants + Jets, SoFi →
@@ -193,17 +196,21 @@ on the repo for the review Actions to post comments.
 
 ### Testing
 
-Pure logic lives in `lib/` behind unit tests (Vitest) so it can be verified
-without a browser or live Firebase:
+The suite (Vitest, **43 tests**) covers pure logic in Node and React components
+in jsdom, so behavior is verified without a browser or live Firebase:
 
 - [`lib/stadiums.test.ts`](lib/stadiums.test.ts) — data integrity: exactly
   30 MLB + 32 NFL, unique ids, coordinates in-bounds, and **no two pins at the
   same coordinate** (guards the shared-venue nudge).
 - [`lib/slug.test.ts`](lib/slug.test.ts) — username normalization.
-- [`lib/stats.test.ts`](lib/stats.test.ts) — visit counts, completion %, league
-  filter, and share summary.
+- [`lib/stats.test.ts`](lib/stats.test.ts) — visit counts (distinct stadiums vs
+  repeat visits), completion %, league filter, and share summary.
 - [`lib/sort.test.ts`](lib/sort.test.ts) — the visited-list sort, including the
-  "empty dates always sort last" rule.
+  "empty dates always sort last" rule and one row per repeat visit.
+- [`components/VisitedList.test.tsx`](components/VisitedList.test.tsx) and
+  [`components/StadiumDetail.test.tsx`](components/StadiumDetail.test.tsx) —
+  render, sorting, add/remove visits (incl. repeat visits), and read-only mode,
+  via React Testing Library.
 
 New features here were built test-first (TDD): the pure functions in
 `lib/stats.ts` and `lib/sort.ts` were specified by their tests before the UI was
@@ -213,8 +220,8 @@ wired to them.
 
 ## 10. What's verified vs. what needs your keys
 
-- ✅ **Verified locally:** the app type-checks, passes 30 unit tests, builds
-  with zero env vars, and every route (`/`, `/tracker`, `/u/[username]`) renders
+- ✅ **Verified locally:** the app type-checks, passes 43 tests, builds with
+  zero env vars, and every route (`/`, `/tracker`, `/u/[username]`) renders
   without errors.
 - 🔑 **Needs your setup to exercise end-to-end:** Google sign-in and the live
   map require a real Firebase project and Mapbox token (§3–§4). Follow those

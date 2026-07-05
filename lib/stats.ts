@@ -5,12 +5,14 @@ import { MLB_STADIUMS, NFL_STADIUMS, STADIUMS, getStadium } from "./stadiums";
 import type { League, Stadium, Visit } from "./types";
 
 export interface Summary {
-  /** MLB stadiums visited. */
+  /** DISTINCT MLB stadiums visited. */
   mlb: number;
-  /** NFL stadiums visited. */
+  /** DISTINCT NFL stadiums visited. */
   nfl: number;
-  /** Total stadiums visited. */
+  /** DISTINCT stadiums visited (drives completion). */
   total: number;
+  /** Raw number of visit records, including repeat visits. */
+  totalVisits: number;
   /** Total MLB stadiums in existence (30). */
   mlbTotal: number;
   /** Total NFL stadiums in existence (32). */
@@ -21,23 +23,30 @@ export interface Summary {
   percent: number;
 }
 
-/** Aggregate a list of visits into per-league counts and completion. */
+/** Aggregate a list of visits into per-league counts and completion. Repeat
+ *  visits to the same stadium count once toward completion, but every visit is
+ *  reflected in `totalVisits`. */
 export function summarize(visits: Visit[]): Summary {
-  let mlb = 0;
-  let nfl = 0;
+  const mlbStadiums = new Set<string>();
+  const nflStadiums = new Set<string>();
+  let totalVisits = 0;
   for (const v of visits) {
     // Classify by the stadium's true league, not the visit's stored league.
     const stadium = getStadium(v.stadiumId);
     if (!stadium) continue;
-    if (stadium.league === "MLB") mlb++;
-    else nfl++;
+    totalVisits++;
+    if (stadium.league === "MLB") mlbStadiums.add(stadium.id);
+    else nflStadiums.add(stadium.id);
   }
+  const mlb = mlbStadiums.size;
+  const nfl = nflStadiums.size;
   const total = mlb + nfl;
   const overallTotal = STADIUMS.length;
   return {
     mlb,
     nfl,
     total,
+    totalVisits,
     mlbTotal: MLB_STADIUMS.length,
     nflTotal: NFL_STADIUMS.length,
     overallTotal,

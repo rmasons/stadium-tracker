@@ -3,8 +3,18 @@ import { summarize, filterByLeague, shareSummary } from "./stats";
 import { MLB_STADIUMS, NFL_STADIUMS, STADIUMS } from "./stadiums";
 import type { Visit } from "./types";
 
+let seq = 0;
 function visit(stadiumId: string): Visit {
-  return { stadiumId, league: "MLB", date: "", opponent: "", updatedAt: 0 };
+  seq += 1;
+  return {
+    id: `v${seq}`,
+    stadiumId,
+    league: "MLB",
+    date: "",
+    opponent: "",
+    createdAt: 0,
+    updatedAt: 0,
+  };
 }
 
 describe("summarize", () => {
@@ -13,13 +23,14 @@ describe("summarize", () => {
     expect(s.total).toBe(0);
     expect(s.mlb).toBe(0);
     expect(s.nfl).toBe(0);
+    expect(s.totalVisits).toBe(0);
     expect(s.percent).toBe(0);
     expect(s.mlbTotal).toBe(30);
     expect(s.nflTotal).toBe(32);
     expect(s.overallTotal).toBe(62);
   });
 
-  it("counts visits by league using the stadium's true league", () => {
+  it("counts DISTINCT stadiums by league using the stadium's true league", () => {
     // Note: classifies by stadium id, not the (possibly stale) visit.league.
     const visits = [
       visit("mlb-yankees"),
@@ -30,6 +41,21 @@ describe("summarize", () => {
     expect(s.mlb).toBe(2);
     expect(s.nfl).toBe(1);
     expect(s.total).toBe(3);
+    expect(s.totalVisits).toBe(3);
+  });
+
+  it("counts a stadium once no matter how many times it was visited", () => {
+    const visits = [
+      visit("mlb-yankees"),
+      visit("mlb-yankees"),
+      visit("mlb-yankees"),
+      visit("nfl-jets"),
+    ];
+    const s = summarize(visits);
+    expect(s.mlb).toBe(1); // one distinct MLB stadium
+    expect(s.nfl).toBe(1);
+    expect(s.total).toBe(2); // two distinct stadiums
+    expect(s.totalVisits).toBe(4); // four raw visits
   });
 
   it("ignores unknown stadium ids", () => {

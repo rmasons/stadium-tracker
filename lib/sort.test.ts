@@ -2,8 +2,18 @@ import { describe, it, expect } from "vitest";
 import { toRows, sortRows } from "./sort";
 import type { Visit } from "./types";
 
+let seq = 0;
 function visit(stadiumId: string, date = "", opponent = ""): Visit {
-  return { stadiumId, league: "MLB", date, opponent, updatedAt: 0 };
+  seq += 1;
+  return {
+    id: `v${seq}`,
+    stadiumId,
+    league: "MLB",
+    date,
+    opponent,
+    createdAt: 0,
+    updatedAt: 0,
+  };
 }
 
 describe("toRows", () => {
@@ -21,6 +31,17 @@ describe("toRows", () => {
 
   it("drops visits whose stadium id is unknown", () => {
     expect(toRows([visit("ghost-stadium")])).toHaveLength(0);
+  });
+
+  it("produces one row per visit, so repeat visits appear separately", () => {
+    const a = visit("mlb-yankees", "2024-05-01");
+    const b = visit("mlb-yankees", "2023-08-12");
+    const rows = toRows([a, b]);
+    expect(rows).toHaveLength(2);
+    expect(rows.map((r) => r.visit.id)).toEqual([a.id, b.id]);
+    expect(new Set(rows.map((r) => r.team))).toEqual(
+      new Set(["New York Yankees"]),
+    );
   });
 });
 
