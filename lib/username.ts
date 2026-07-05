@@ -6,14 +6,10 @@
 import { doc, getDoc, runTransaction } from "firebase/firestore";
 import type { User } from "firebase/auth";
 import { getDb } from "./firebase";
+import { isValidUsername, MIN_USERNAME_LENGTH, slugify } from "./slug";
 import type { PublicProfile } from "./types";
 
 class UsernameTakenError extends Error {}
-
-/** Reduce arbitrary text to a URL-safe handle: lowercase alphanumerics only. */
-export function slugify(input: string): string {
-  return input.toLowerCase().replace(/[^a-z0-9]+/g, "").slice(0, 24);
-}
 
 function randomSuffix(): string {
   return Math.random().toString(36).slice(2, 6);
@@ -97,8 +93,10 @@ export async function setUsername(
   if (!db) throw new Error("Firebase is not configured.");
 
   const cleaned = slugify(next);
-  if (cleaned.length < 3) {
-    throw new Error("Username must be at least 3 letters or numbers.");
+  if (!isValidUsername(cleaned)) {
+    throw new Error(
+      `Username must be at least ${MIN_USERNAME_LENGTH} letters or numbers.`,
+    );
   }
   if (cleaned === current) return current;
 

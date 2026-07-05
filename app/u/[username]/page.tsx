@@ -7,7 +7,7 @@ import { getProfile, getUidByUsername } from "@/lib/username";
 import { getVisits } from "@/lib/visits";
 import { isFirebaseConfigured } from "@/lib/firebase";
 import { VisitedList } from "@/components/VisitedList";
-import { MLB_STADIUMS, NFL_STADIUMS } from "@/lib/stadiums";
+import { summarize } from "@/lib/stats";
 import type { PublicProfile, Visit } from "@/lib/types";
 
 type Status = "loading" | "notfound" | "ready";
@@ -46,16 +46,7 @@ export default function SharePage() {
     };
   }, [username]);
 
-  const counts = useMemo(() => {
-    const mlbIds = new Set(MLB_STADIUMS.map((s) => s.id));
-    let mlb = 0;
-    let nfl = 0;
-    for (const v of visits) {
-      if (mlbIds.has(v.stadiumId)) mlb++;
-      else nfl++;
-    }
-    return { mlb, nfl };
-  }, [visits]);
+  const summary = useMemo(() => summarize(visits), [visits]);
 
   return (
     <div className="mx-auto w-full max-w-4xl px-4 py-8">
@@ -92,16 +83,30 @@ export default function SharePage() {
 
           <div className="mt-3 flex flex-wrap gap-4 text-sm text-muted">
             <span>
-              <strong className="text-foreground">{counts.mlb}</strong>/
-              {MLB_STADIUMS.length} MLB
+              <strong className="text-foreground">{summary.mlb}</strong>/
+              {summary.mlbTotal} MLB
             </span>
             <span>
-              <strong className="text-foreground">{counts.nfl}</strong>/
-              {NFL_STADIUMS.length} NFL
+              <strong className="text-foreground">{summary.nfl}</strong>/
+              {summary.nflTotal} NFL
             </span>
             <span>
-              <strong className="text-foreground">{visits.length}</strong> total
+              <strong className="text-foreground">{summary.total}</strong> of{" "}
+              {summary.overallTotal} ({summary.percent}%)
             </span>
+          </div>
+          <div
+            className="mt-3 h-2 w-full max-w-md overflow-hidden rounded-full bg-border"
+            role="progressbar"
+            aria-valuenow={summary.percent}
+            aria-valuemin={0}
+            aria-valuemax={100}
+            aria-label={`${profile.displayName}'s stadiums visited`}
+          >
+            <div
+              className="h-full rounded-full bg-foreground"
+              style={{ width: `${summary.percent}%` }}
+            />
           </div>
 
           <div className="mt-6">

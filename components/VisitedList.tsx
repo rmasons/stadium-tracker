@@ -1,19 +1,9 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { getStadium, LEAGUE_COLORS } from "@/lib/stadiums";
+import { LEAGUE_COLORS } from "@/lib/stadiums";
+import { sortRows, toRows, type SortKey } from "@/lib/sort";
 import type { Visit } from "@/lib/types";
-
-type SortKey = "team" | "league" | "name" | "city" | "date";
-
-interface Row {
-  visit: Visit;
-  team: string;
-  league: string;
-  name: string;
-  city: string;
-  date: string;
-}
 
 interface Props {
   visits: Visit[];
@@ -33,35 +23,10 @@ export function VisitedList({ visits, editable = false, onRemove }: Props) {
   const [sortKey, setSortKey] = useState<SortKey>("date");
   const [asc, setAsc] = useState(false);
 
-  const rows = useMemo<Row[]>(() => {
-    const mapped = visits.flatMap<Row>((visit) => {
-      const stadium = getStadium(visit.stadiumId);
-      if (!stadium) return [];
-      return [
-        {
-          visit,
-          team: stadium.team,
-          league: stadium.league,
-          name: stadium.name,
-          city: `${stadium.city}, ${stadium.state}`,
-          date: visit.date,
-        },
-      ];
-    });
-
-    const dir = asc ? 1 : -1;
-    return mapped.sort((a, b) => {
-      // Empty dates always sort to the bottom regardless of direction.
-      if (sortKey === "date") {
-        if (!a.date && !b.date) return 0;
-        if (!a.date) return 1;
-        if (!b.date) return -1;
-      }
-      const av = a[sortKey];
-      const bv = b[sortKey];
-      return av < bv ? -1 * dir : av > bv ? 1 * dir : 0;
-    });
-  }, [visits, sortKey, asc]);
+  const rows = useMemo(
+    () => sortRows(toRows(visits), sortKey, asc),
+    [visits, sortKey, asc],
+  );
 
   function toggleSort(key: SortKey) {
     if (key === sortKey) {
@@ -111,7 +76,7 @@ export function VisitedList({ visits, editable = false, onRemove }: Props) {
               <td className="px-3 py-2">
                 <span
                   className="inline-block rounded px-1.5 py-0.5 text-xs font-semibold text-white"
-                  style={{ background: LEAGUE_COLORS[row.visit.league] }}
+                  style={{ background: LEAGUE_COLORS[row.league] }}
                 >
                   {row.league}
                 </span>

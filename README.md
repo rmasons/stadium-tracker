@@ -4,11 +4,13 @@ Track the MLB and NFL stadiums you've visited, log the date and opponent for
 each visit, and share a public map of your trackers with friends.
 
 - **Map** of all **30 MLB + 32 NFL** stadiums across the US & Canada, pins
-  color-coded by league (MLB blue, NFL red).
+  color-coded by league (MLB blue, NFL red), with an **All / MLB / NFL filter**.
 - **Google sign-in** via Firebase Auth.
 - Click a pin → **mark "I've been here"**, log the date and opponent.
-- **My Tracker** — a sortable list of everywhere you've been.
-- **Share URL** — every user gets a public read-only page at `/u/[username]`.
+- **My Tracker** — a sortable list, **completion progress bar**, and per-league
+  counts.
+- **Share URL** — every user gets a public read-only page at `/u/[username]`,
+  plus a one-line copyable summary of their progress.
 
 Built with **Next.js (App Router) · Firebase Auth + Firestore · Mapbox GL JS**,
 deployed on **Vercel**.
@@ -153,8 +155,8 @@ development folder:
 | `test` | Staging | `promotion-review.yml` (**blocking**) + `build.yml` |
 | `main` | Production | `promotion-review.yml` (**blocking**) + `build.yml` |
 
-- [`build.yml`](.github/workflows/build.yml) runs `tsc --noEmit` + `next build`
-  on PRs to `test`/`main`.
+- [`build.yml`](.github/workflows/build.yml) runs `tsc --noEmit`, the unit
+  tests (`npm test`), and `next build` on PRs to `test`/`main`.
 - [`claude-code-review.yml`](.github/workflows/claude-code-review.yml) is a
   fresh-context advisory review on PRs to `dev`.
 - [`promotion-review.yml`](.github/workflows/promotion-review.yml) is a
@@ -186,13 +188,34 @@ on the repo for the review Actions to post comments.
 | `npm run start` | Serve the production build |
 | `npm run lint` | ESLint |
 | `npm run typecheck` | `tsc --noEmit` |
+| `npm test` | Run the unit test suite (Vitest, one-shot) |
+| `npm run test:watch` | Vitest in watch mode |
+
+### Testing
+
+Pure logic lives in `lib/` behind unit tests (Vitest) so it can be verified
+without a browser or live Firebase:
+
+- [`lib/stadiums.test.ts`](lib/stadiums.test.ts) — data integrity: exactly
+  30 MLB + 32 NFL, unique ids, coordinates in-bounds, and **no two pins at the
+  same coordinate** (guards the shared-venue nudge).
+- [`lib/slug.test.ts`](lib/slug.test.ts) — username normalization.
+- [`lib/stats.test.ts`](lib/stats.test.ts) — visit counts, completion %, league
+  filter, and share summary.
+- [`lib/sort.test.ts`](lib/sort.test.ts) — the visited-list sort, including the
+  "empty dates always sort last" rule.
+
+New features here were built test-first (TDD): the pure functions in
+`lib/stats.ts` and `lib/sort.ts` were specified by their tests before the UI was
+wired to them.
 
 ---
 
 ## 10. What's verified vs. what needs your keys
 
-- ✅ **Verified locally:** the app type-checks, builds with zero env vars, and
-  every route (`/`, `/tracker`, `/u/[username]`) renders without errors.
+- ✅ **Verified locally:** the app type-checks, passes 30 unit tests, builds
+  with zero env vars, and every route (`/`, `/tracker`, `/u/[username]`) renders
+  without errors.
 - 🔑 **Needs your setup to exercise end-to-end:** Google sign-in and the live
   map require a real Firebase project and Mapbox token (§3–§4). Follow those
   sections and everything wires together.

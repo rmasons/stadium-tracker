@@ -6,7 +6,7 @@ import { useAuth } from "@/components/AuthProvider";
 import { VisitedList } from "@/components/VisitedList";
 import { subscribeToVisits, removeVisit } from "@/lib/visits";
 import { setUsername } from "@/lib/username";
-import { MLB_STADIUMS, NFL_STADIUMS } from "@/lib/stadiums";
+import { shareSummary, summarize } from "@/lib/stats";
 import type { Visit } from "@/lib/types";
 
 export default function TrackerPage() {
@@ -14,6 +14,7 @@ export default function TrackerPage() {
   const [visits, setVisits] = useState<Visit[]>([]);
   const [origin, setOrigin] = useState("");
   const [copied, setCopied] = useState(false);
+  const [copiedSummary, setCopiedSummary] = useState(false);
 
   useEffect(() => {
     // window.location is only available on the client, after mount.
@@ -30,16 +31,7 @@ export default function TrackerPage() {
     return subscribeToVisits(user.uid, setVisits);
   }, [user]);
 
-  const counts = useMemo(() => {
-    const mlbIds = new Set(MLB_STADIUMS.map((s) => s.id));
-    let mlb = 0;
-    let nfl = 0;
-    for (const v of visits) {
-      if (mlbIds.has(v.stadiumId)) mlb++;
-      else nfl++;
-    }
-    return { mlb, nfl };
-  }, [visits]);
+  const summary = useMemo(() => summarize(visits), [visits]);
 
   if (loading) {
     return <PageShell>Loading…</PageShell>;
@@ -72,18 +64,32 @@ export default function TrackerPage() {
   return (
     <PageShell>
       <h1 className="text-2xl font-bold">My Tracker</h1>
-      <div className="mt-2 flex flex-wrap gap-4 text-sm text-muted">
+      <div className="mt-2 flex flex-wrap items-center gap-4 text-sm text-muted">
         <span>
-          <strong className="text-foreground">{counts.mlb}</strong>/
-          {MLB_STADIUMS.length} MLB
+          <strong className="text-foreground">{summary.mlb}</strong>/
+          {summary.mlbTotal} MLB
         </span>
         <span>
-          <strong className="text-foreground">{counts.nfl}</strong>/
-          {NFL_STADIUMS.length} NFL
+          <strong className="text-foreground">{summary.nfl}</strong>/
+          {summary.nflTotal} NFL
         </span>
         <span>
-          <strong className="text-foreground">{visits.length}</strong> total
+          <strong className="text-foreground">{summary.total}</strong> of{" "}
+          {summary.overallTotal} ({summary.percent}%)
         </span>
+      </div>
+      <div
+        className="mt-3 h-2 w-full max-w-md overflow-hidden rounded-full bg-border"
+        role="progressbar"
+        aria-valuenow={summary.percent}
+        aria-valuemin={0}
+        aria-valuemax={100}
+        aria-label="Stadiums visited"
+      >
+        <div
+          className="h-full rounded-full bg-foreground transition-all"
+          style={{ width: `${summary.percent}%` }}
+        />
       </div>
 
       {profile && (
@@ -117,6 +123,23 @@ export default function TrackerPage() {
                 View
               </Link>
             </div>
+          )}
+          {shareUrl && (
+            <button
+              onClick={() => {
+                void navigator.clipboard
+                  .writeText(
+                    `${shareSummary(profile.displayName, visits)} ${shareUrl}`,
+                  )
+                  .then(() => {
+                    setCopiedSummary(true);
+                    setTimeout(() => setCopiedSummary(false), 1500);
+                  });
+              }}
+              className="mt-2 text-xs text-muted underline hover:text-foreground"
+            >
+              {copiedSummary ? "Summary copied!" : "Copy a shareable summary"}
+            </button>
           )}
         </div>
       )}

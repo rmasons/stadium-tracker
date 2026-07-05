@@ -4,17 +4,23 @@ import { useEffect, useRef } from "react";
 import "mapbox-gl/dist/mapbox-gl.css";
 import type { Map as MapboxMap } from "mapbox-gl";
 import { STADIUMS, LEAGUE_COLORS } from "@/lib/stadiums";
-import type { Stadium } from "@/lib/types";
+import type { League, Stadium } from "@/lib/types";
 
 const MAPBOX_TOKEN = process.env.NEXT_PUBLIC_MAPBOX_TOKEN;
 
 interface Props {
   visitedIds: Set<string>;
   selectedId: string | null;
+  leagueFilter: League | "ALL";
   onSelect: (stadium: Stadium) => void;
 }
 
-export function StadiumMap({ visitedIds, selectedId, onSelect }: Props) {
+export function StadiumMap({
+  visitedIds,
+  selectedId,
+  leagueFilter,
+  onSelect,
+}: Props) {
   const containerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<MapboxMap | null>(null);
   const markersRef = useRef<Record<string, HTMLElement>>({});
@@ -73,15 +79,17 @@ export function StadiumMap({ visitedIds, selectedId, onSelect }: Props) {
     };
   }, []);
 
-  // Reflect visited / selected state onto marker classes.
+  // Reflect visited / selected state and the league filter onto markers.
   useEffect(() => {
     for (const stadium of STADIUMS) {
       const el = markersRef.current[stadium.id];
       if (!el) continue;
       el.classList.toggle("stadium-marker--visited", visitedIds.has(stadium.id));
       el.classList.toggle("stadium-marker--selected", selectedId === stadium.id);
+      const visible = leagueFilter === "ALL" || stadium.league === leagueFilter;
+      el.style.display = visible ? "" : "none";
     }
-  }, [visitedIds, selectedId]);
+  }, [visitedIds, selectedId, leagueFilter]);
 
   // Ease to a stadium when it becomes selected.
   useEffect(() => {
