@@ -118,8 +118,9 @@ export function opponentsFor(stadium: Stadium): string[] {
     .sort();
 }
 
-/** Brand colors used to color-code pins and badges by league. */
+/** Brand colors used to color-code pins and badges by league (see the design
+ *  tokens --mlb / --nfl in app/globals.css — kept in sync via CSS vars). */
 export const LEAGUE_COLORS: Record<Stadium["league"], string> = {
-  MLB: "#2563eb", // blue
-  NFL: "#dc2626", // red
+  MLB: "var(--mlb)",
+  NFL: "var(--nfl)",
 };

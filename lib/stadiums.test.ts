@@ -61,8 +61,9 @@ describe("stadium data integrity", () => {
   });
 
   it("defines a color for each league", () => {
-    expect(LEAGUE_COLORS.MLB).toMatch(/^#[0-9a-f]{6}$/i);
-    expect(LEAGUE_COLORS.NFL).toMatch(/^#[0-9a-f]{6}$/i);
+    expect(LEAGUE_COLORS.MLB).toMatch(/^var\(--\w+\)$/);
+    expect(LEAGUE_COLORS.NFL).toMatch(/^var\(--\w+\)$/);
+    expect(LEAGUE_COLORS.MLB).not.toBe(LEAGUE_COLORS.NFL);
   });
 });
 

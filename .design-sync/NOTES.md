@@ -12,11 +12,15 @@ synced component's props come from `cfg.dtsPropsFor` (hand-written) rather
 than auto-extraction — keep both files in sync when a synced component's
 props change.
 
-## Scope: 9 of the app's components, not all of them
+## Scope: 8 of the app's components, not all of them
 
 Synced (presentational, no Next.js/Firebase/Mapbox coupling): `LogoMark`,
 `FilterSegments`, `StadiumDetail`, `VisitedList`, `MapDetailPanel`, `StatTile`,
-`StadiumListRow`, `ZoomControls`, `VariantSwitcher`.
+`StadiumListRow`, `ZoomControls`.
+
+`VariantSwitcher` was synced during the 1A/1B comparison phase but was dropped
+along with `LayoutA`/`HeaderA`/`ProgressCard` once 1B was chosen as the
+permanent layout — no more variant to switch between.
 
 Excluded, and why:
 - **`SignInButton`** — calls `useAuth()` (`components/AuthProvider.tsx`),
