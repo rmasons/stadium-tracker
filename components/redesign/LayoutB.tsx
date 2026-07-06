@@ -45,7 +45,7 @@ export function LayoutB({
   const [zoomedIn, setZoomedIn] = useState(false);
 
   return (
-    <div className="flex flex-1 flex-col md:flex-row">
+    <div className="flex flex-1 flex-col md:flex-row min-h-0">
       <SidebarB
         summary={summary}
         filter={leagueFilter}
