@@ -20,18 +20,14 @@ export const INITIAL_ZOOM = 3.4;
 // a 30km-radius group is comfortably separated in screen pixels once expanded.
 const CLUSTER_MAX_ZOOM = 7.5;
 
-// Keep panning within where the stadiums actually are (derived from the data,
-// not hand-picked, so it stays correct if a stadium is added outside the
-// current footprint). Generous degree padding so the edge stadiums aren't
-// pinned right at the pannable boundary. NOTE: this box is deliberately
-// tighter than "the whole world" — the initial/reset view is framed by
-// fitBounds()-ing to exactly this box (see below and LayoutB's reset
-// button), not by a hand-picked zoom level. A fixed zoom that doesn't
-// match this box's aspect ratio would conflict with maxBounds: Mapbox
-// refuses to ever show area outside maxBounds, so if a fixed zoom were too
-// far out for a given container's aspect ratio, it would forcibly zoom in
-// and recenter to whatever the constraint math lands on — not the
-// framing we asked for.
+// The box the initial view and "reset view" button frame to (derived from
+// the stadium data, not hand-picked, so it stays correct if a stadium is
+// added outside the current footprint). Generous degree padding so the edge
+// stadiums aren't framed right at the viewport's edge. This is no longer
+// passed to Mapbox's `maxBounds` (panning is unrestricted) — that combination
+// was what caused the map to zoom/recenter onto a bogus location (e.g.
+// Manitoba) on load, since maxBounds forcibly clamps the camera to never
+// reveal area outside the box, independent of what fitBounds/easeTo asked for.
 const BOUNDS_PADDING_DEG = 6;
 const STADIUM_LATS = STADIUMS.map((s) => s.lat);
 const STADIUM_LNGS = STADIUMS.map((s) => s.lng);
@@ -147,13 +143,6 @@ export function StadiumMap({
         zoom: INITIAL_ZOOM,
         minZoom: 2,
         maxZoom: 14,
-        // maxBounds is applied later (see resizeObserver below), not here —
-        // setting it up front lets Mapbox clamp the *initial* camera to fit
-        // within bounds using whatever container size it reads at this exact
-        // instant, which in a flex row sharing width with the sidebar can
-        // still be the wrong transient size. Once that clamp lands on a
-        // bogus center/zoom, a later resize() only fixes the canvas
-        // dimensions — it doesn't recover the camera position.
       });
 
       // The container's final flex-resolved size (sidebar + map sharing a
@@ -163,8 +152,7 @@ export function StadiumMap({
       // with the container's actual size for the life of the map, and the
       // first time we see a real (non-zero) size, frame the initial view by
       // fitting to MAX_BOUNDS (so the zoom is always correct for whatever
-      // this container's actual aspect ratio is) before locking panning to
-      // that same box.
+      // this container's actual aspect ratio is).
       let boundsApplied = false;
       resizeObserver = new ResizeObserver((entries) => {
         map?.resize();
@@ -172,7 +160,6 @@ export function StadiumMap({
         if (!boundsApplied && width > 0 && height > 0) {
           boundsApplied = true;
           map?.fitBounds(MAX_BOUNDS, { padding: BOUNDS_FIT_PADDING, duration: 0 });
-          map?.setMaxBounds(MAX_BOUNDS);
         }
       });
       resizeObserver.observe(containerRef.current);
