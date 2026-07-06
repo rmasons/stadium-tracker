@@ -66,7 +66,7 @@ export function LayoutB({
         />
 
         <div
-          style={{ position: "absolute", left: 20, right: 20, bottom: 20, zIndex: 10 }}
+          style={{ position: "absolute", left: 20, right: 20, bottom: 20, zIndex: 40 }}
         >
           <MapDetailPanel
             stadium={selected}
