@@ -14,6 +14,13 @@ const MAPBOX_TOKEN = process.env.NEXT_PUBLIC_MAPBOX_TOKEN;
 // a 30km-radius group is comfortably separated in screen pixels once expanded.
 const CLUSTER_MAX_ZOOM = 7.5;
 
+// The bottom detail drawer (MapDetailPanel) floats over the map, so a plain
+// `center` would put a selected stadium right behind it. Bias `easeTo`'s
+// visual center upward by this much screen space so the pin lands above the
+// drawer — matters most on short/wide (desktop) viewports, where a fixed-px
+// drawer eats a much bigger share of map height than on a tall phone screen.
+const DETAIL_PANEL_CLEARANCE = { top: 0, bottom: 160, left: 0, right: 0 };
+
 // Constant screen-pixel offsets that fan co-located pins apart (computed once).
 const PIN_OFFSETS = computePinOffsets();
 // Metro groups of 2+ stadiums that are candidates for a cluster badge.
@@ -165,6 +172,7 @@ export function StadiumMap({
           mapRef.current?.easeTo({
             center: [lng, lat],
             zoom: CLUSTER_MAX_ZOOM + 1.2,
+            padding: DETAIL_PANEL_CLEARANCE,
             duration: 500,
           });
         });
@@ -208,6 +216,7 @@ export function StadiumMap({
       map.easeTo({
         center: [stadium.lng, stadium.lat],
         zoom: zoom < CLUSTER_MAX_ZOOM ? CLUSTER_MAX_ZOOM + 1.2 : zoom,
+        padding: DETAIL_PANEL_CLEARANCE,
         duration: 600,
       });
     }
