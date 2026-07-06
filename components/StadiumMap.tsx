@@ -134,15 +134,32 @@ export function StadiumMap({
         zoom: INITIAL_ZOOM,
         minZoom: 2,
         maxZoom: 14,
-        maxBounds: MAX_BOUNDS,
+        // maxBounds is applied later (see resizeObserver below), not here —
+        // setting it up front lets Mapbox clamp the *initial* camera to fit
+        // within bounds using whatever container size it reads at this exact
+        // instant, which in a flex row sharing width with the sidebar can
+        // still be the wrong transient size. Once that clamp lands on a
+        // bogus center/zoom, a later resize() only fixes the canvas
+        // dimensions — it doesn't recover the camera position.
       });
 
       // The container's final flex-resolved size (sidebar + map sharing a
       // row) can settle a tick after this runs, leaving the map's canvas
       // sized for a stale layout — it renders blank until some interaction
       // (e.g. a trackpad pan) forces Mapbox to recompute. Keep it in sync
-      // with the container's actual size for the life of the map.
-      resizeObserver = new ResizeObserver(() => map?.resize());
+      // with the container's actual size for the life of the map, and the
+      // first time we see a real (non-zero) size, re-assert the intended
+      // initial framing before locking in maxBounds.
+      let boundsApplied = false;
+      resizeObserver = new ResizeObserver((entries) => {
+        map?.resize();
+        const { width, height } = entries[0].contentRect;
+        if (!boundsApplied && width > 0 && height > 0) {
+          boundsApplied = true;
+          map?.jumpTo({ center: INITIAL_CENTER, zoom: INITIAL_ZOOM });
+          map?.setMaxBounds(MAX_BOUNDS);
+        }
+      });
       resizeObserver.observe(containerRef.current);
 
       if (showNavControl) {
