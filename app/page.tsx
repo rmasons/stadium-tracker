@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { LayoutB } from "@/components/redesign/LayoutB";
 import { useAuth } from "@/components/AuthProvider";
-import { subscribeToVisits, addVisit, removeVisit } from "@/lib/visits";
+import { subscribeToVisits, addVisit, removeVisit, updateVisit } from "@/lib/visits";
 import { summarize } from "@/lib/stats";
 import type { League, Stadium, Visit } from "@/lib/types";
 
@@ -46,6 +46,11 @@ export default function HomePage() {
     await removeVisit(user.uid, visitId);
   }
 
+  async function handleUpdate(visitId: string, input: { date: string; opponent: string }) {
+    if (!user) return;
+    await updateVisit(user.uid, visitId, input);
+  }
+
   const shared = {
     summary,
     selected,
@@ -56,6 +61,7 @@ export default function HomePage() {
     canEdit: !!user,
     onAdd: handleAdd,
     onRemove: handleRemove,
+    onUpdate: handleUpdate,
   };
 
   return (

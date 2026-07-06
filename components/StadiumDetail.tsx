@@ -13,6 +13,7 @@ interface Props {
   onClose: () => void;
   onAdd: (input: { date: string; opponent: string }) => Promise<void>;
   onRemove: (visitId: string) => Promise<void>;
+  onUpdate: (visitId: string, input: { date: string; opponent: string }) => Promise<void>;
 }
 
 export function StadiumDetail({
@@ -22,16 +23,33 @@ export function StadiumDetail({
   onClose,
   onAdd,
   onRemove,
+  onUpdate,
 }: Props) {
   const [date, setDate] = useState("");
   const [opponent, setOpponent] = useState("");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  // Inline edit state — only one row editable at a time.
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [editDate, setEditDate] = useState("");
+  const [editOpponent, setEditOpponent] = useState("");
+
   const opponents = useMemo(() => opponentsFor(stadium), [stadium]);
 
   // Most recent visit first.
   const ordered = [...visits].sort((a, b) => b.createdAt - a.createdAt);
+
+  function startEdit(v: Visit) {
+    setEditingId(v.id);
+    setEditDate(v.date);
+    setEditOpponent(v.opponent);
+    setError(null);
+  }
+
+  function cancelEdit() {
+    setEditingId(null);
+  }
 
   async function handleAdd() {
     setBusy(true);
@@ -40,6 +58,19 @@ export function StadiumDetail({
       await onAdd({ date, opponent });
       setDate("");
       setOpponent("");
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Something went wrong.");
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function handleUpdate(visitId: string) {
+    setBusy(true);
+    setError(null);
+    try {
+      await onUpdate(visitId, { date: editDate, opponent: editOpponent });
+      setEditingId(null);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Something went wrong.");
     } finally {
@@ -96,29 +127,86 @@ export function StadiumDetail({
                 : `You've been here ${ordered.length} times`}
             </p>
             <ul className="space-y-2">
-              {ordered.map((v) => (
-                <li
-                  key={v.id}
-                  className="flex items-center justify-between rounded-md bg-background px-3 py-2 text-sm"
-                >
-                  <span>
-                    {v.date || "Date unknown"}
-                    {v.opponent && (
-                      <span className="text-muted"> · vs {v.opponent}</span>
+              {ordered.map((v) =>
+                editingId === v.id ? (
+                  <li
+                    key={v.id}
+                    className="space-y-2 rounded-md bg-background px-3 py-2 text-sm"
+                  >
+                    <div className="flex gap-2">
+                      <input
+                        type="date"
+                        aria-label="Edit date visited"
+                        value={editDate}
+                        onChange={(e) => setEditDate(e.target.value)}
+                        className="min-w-0 flex-1 rounded border border-border bg-card px-2 py-1"
+                      />
+                      <select
+                        aria-label="Edit opponent"
+                        value={editOpponent}
+                        onChange={(e) => setEditOpponent(e.target.value)}
+                        className="min-w-0 flex-1 rounded border border-border bg-card px-2 py-1"
+                      >
+                        <option value="">— Unknown —</option>
+                        {opponents.map((team) => (
+                          <option key={team} value={team}>
+                            {team}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                    <div className="flex justify-end gap-2">
+                      <button
+                        onClick={cancelEdit}
+                        disabled={busy}
+                        className="rounded px-2 py-1 text-xs text-muted hover:bg-border disabled:opacity-40"
+                      >
+                        Cancel
+                      </button>
+                      <button
+                        onClick={() => void handleUpdate(v.id)}
+                        disabled={busy}
+                        aria-label="Save visit"
+                        className="rounded bg-foreground px-2 py-1 text-xs font-medium text-background hover:opacity-90 disabled:opacity-40"
+                      >
+                        Save
+                      </button>
+                    </div>
+                  </li>
+                ) : (
+                  <li
+                    key={v.id}
+                    className="flex items-center justify-between rounded-md bg-background px-3 py-2 text-sm"
+                  >
+                    <span>
+                      {v.date || "Date unknown"}
+                      {v.opponent && (
+                        <span className="text-muted"> · vs {v.opponent}</span>
+                      )}
+                    </span>
+                    {canEdit && (
+                      <div className="ml-2 flex items-center gap-1">
+                        <button
+                          onClick={() => startEdit(v)}
+                          disabled={busy}
+                          aria-label="Edit visit"
+                          className="rounded px-1.5 text-muted hover:bg-border hover:text-foreground disabled:opacity-40"
+                        >
+                          ✎
+                        </button>
+                        <button
+                          onClick={() => void handleRemove(v.id)}
+                          disabled={busy}
+                          aria-label="Remove visit"
+                          className="rounded px-1.5 text-muted hover:bg-border hover:text-foreground disabled:opacity-40"
+                        >
+                          ✕
+                        </button>
+                      </div>
                     )}
-                  </span>
-                  {canEdit && (
-                    <button
-                      onClick={() => void handleRemove(v.id)}
-                      disabled={busy}
-                      aria-label="Remove visit"
-                      className="ml-2 rounded px-1.5 text-muted hover:bg-border hover:text-foreground disabled:opacity-40"
-                    >
-                      ✕
-                    </button>
-                  )}
-                </li>
-              ))}
+                  </li>
+                ),
+              )}
             </ul>
           </div>
         )}
