@@ -105,8 +105,22 @@ export function getStadium(id: string): Stadium | undefined {
   return STADIUMS_BY_ID[id];
 }
 
-/** Brand colors used to color-code pins and badges by league. */
+/**
+ * The teams a stadium's home team could have hosted: every team in the same
+ * league, minus the home team, sorted alphabetically. Used to populate the
+ * opponent picker when logging a visit.
+ */
+export function opponentsFor(stadium: Stadium): string[] {
+  return STADIUMS.filter(
+    (s) => s.league === stadium.league && s.team !== stadium.team,
+  )
+    .map((s) => s.team)
+    .sort();
+}
+
+/** Brand colors used to color-code pins and badges by league (see the design
+ *  tokens --mlb / --nfl in app/globals.css — kept in sync via CSS vars). */
 export const LEAGUE_COLORS: Record<Stadium["league"], string> = {
-  MLB: "#2563eb", // blue
-  NFL: "#dc2626", // red
+  MLB: "var(--mlb)",
+  NFL: "var(--nfl)",
 };

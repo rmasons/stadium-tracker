@@ -1,0 +1,35 @@
+{
+  "projectId": "c8fa7326-dcd0-4296-b61e-9ef7fd9ddb49",
+  "shape": "package",
+  "pkg": "stadium-tracker",
+  "globalName": "StadiumTracker",
+  "entry": "./.ds-sync-entry.ts",
+  "tsconfig": "./tsconfig.json",
+  "cssEntry": "./.design-sync/.cache/css-src/chunks/generated-globals.css",
+  "readmeHeader": ".design-sync/conventions.md",
+  "componentSrcMap": {
+    "LogoMark": "components/LogoMark.tsx",
+    "FilterSegments": "components/FilterSegments.tsx",
+    "StadiumDetail": "components/StadiumDetail.tsx",
+    "VisitedList": "components/VisitedList.tsx",
+    "MapDetailPanel": "components/MapDetailPanel.tsx",
+    "StatTile": "components/redesign/StatTile.tsx",
+    "StadiumListRow": "components/redesign/StadiumListRow.tsx",
+    "ZoomControls": "components/redesign/ZoomControls.tsx"
+  },
+  "dtsPropsFor": {
+    "LogoMark": "size?: number;\n  radius?: number;\n  dot?: boolean;",
+    "FilterSegments": "value: \"ALL\" | \"MLB\" | \"NFL\";\n  onChange: (next: \"ALL\" | \"MLB\" | \"NFL\") => void;\n  variant?: \"card\" | \"sidebar\";",
+    "StatTile": "value: number;\n  total: number;\n  label: string;\n  color: string;",
+    "StadiumListRow": "stadium: { id: string; name: string; team: string; city: string; state: string; league: \"MLB\" | \"NFL\"; lat: number; lng: number };\n  visited: boolean;\n  selected: boolean;\n  onClick: () => void;",
+    "ZoomControls": "onZoomIn: () => void;\n  onZoomOut: () => void;",
+    "StadiumDetail": "stadium: { id: string; name: string; team: string; city: string; state: string; league: \"MLB\" | \"NFL\"; lat: number; lng: number };\n  visits: { id: string; stadiumId: string; league: \"MLB\" | \"NFL\"; date: string; opponent: string; createdAt: number; updatedAt: number }[];\n  canEdit: boolean;\n  onClose: () => void;\n  onAdd: (input: { date: string; opponent: string }) => Promise<void>;\n  onRemove: (visitId: string) => Promise<void>;",
+    "VisitedList": "visits: { id: string; stadiumId: string; league: \"MLB\" | \"NFL\"; date: string; opponent: string; createdAt: number; updatedAt: number }[];\n  editable?: boolean;\n  onRemove?: (visitId: string) => void;",
+    "MapDetailPanel": "stadium: { id: string; name: string; team: string; city: string; state: string; league: \"MLB\" | \"NFL\"; lat: number; lng: number } | null;\n  visits: { id: string; stadiumId: string; league: \"MLB\" | \"NFL\"; date: string; opponent: string; createdAt: number; updatedAt: number }[];\n  canEdit: boolean;\n  onClose: () => void;\n  onAdd: (input: { date: string; opponent: string }) => Promise<void>;\n  onRemove: (visitId: string) => Promise<void>;\n  emptyHint?: string;"
+  },
+  "overrides": {
+    "MapDetailPanel": { "cardMode": "column" },
+    "StadiumDetail": { "cardMode": "column" },
+    "VisitedList": { "cardMode": "column" }
+  }
+}

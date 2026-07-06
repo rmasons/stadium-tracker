@@ -6,6 +6,7 @@ import {
   screen,
   fireEvent,
   waitFor,
+  within,
 } from "@testing-library/react";
 import { StadiumDetail } from "./StadiumDetail";
 import { STADIUMS_BY_ID } from "@/lib/stadiums";
@@ -82,7 +83,26 @@ describe("StadiumDetail", () => {
     expect(screen.getByText(/sign in with google/i)).toBeInTheDocument();
   });
 
-  it("adds a visit with the entered date and opponent", async () => {
+  it("offers same-league opponents and excludes the home team", () => {
+    render(
+      <StadiumDetail
+        stadium={stadium}
+        visits={[]}
+        canEdit
+        onClose={vi.fn()}
+        onAdd={noop}
+        onRemove={noop}
+      />,
+    );
+    const select = screen.getByLabelText(/opponent/i);
+    const options = within(select).getAllByRole("option");
+    const values = options.map((o) => (o as HTMLOptionElement).value);
+    expect(values).toContain("Boston Red Sox");
+    expect(values).not.toContain("New York Yankees"); // the home team
+    expect(values).not.toContain("New York Jets"); // an NFL team
+  });
+
+  it("adds a visit with the entered date and selected opponent", async () => {
     const onAdd = vi.fn().mockResolvedValue(undefined);
     render(
       <StadiumDetail
@@ -98,14 +118,14 @@ describe("StadiumDetail", () => {
       target: { value: "2024-07-01" },
     });
     fireEvent.change(screen.getByLabelText(/opponent/i), {
-      target: { value: "Red Sox" },
+      target: { value: "Boston Red Sox" },
     });
     fireEvent.click(screen.getByRole("button", { name: /i've been here/i }));
 
     await waitFor(() =>
       expect(onAdd).toHaveBeenCalledWith({
         date: "2024-07-01",
-        opponent: "Red Sox",
+        opponent: "Boston Red Sox",
       }),
     );
   });
