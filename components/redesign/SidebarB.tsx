@@ -38,7 +38,7 @@ export function SidebarB({
 
   return (
     <div
-      className={`fixed inset-x-0 bottom-0 z-30 flex w-full flex-col border-t bg-white md:static md:inset-auto md:z-auto md:h-full md:w-[340px] md:border-r md:border-t-0 ${
+      className={`${selectedId ? "hidden" : "flex"} md:flex fixed inset-x-0 bottom-0 z-30 w-full flex-col border-t bg-white md:static md:inset-auto md:z-auto md:h-full md:w-[340px] md:border-r md:border-t-0 ${
         mobileExpanded ? "max-h-[75vh]" : ""
       }`}
       style={{ borderColor: "oklch(92% 0.005 95)" }}

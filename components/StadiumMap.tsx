@@ -60,6 +60,17 @@ export function StadiumMap({
     const expanded = zoom >= CLUSTER_MAX_ZOOM;
     const filter = leagueFilterRef.current;
 
+    // Base pass: every stadium's marker visibility follows the league filter.
+    for (const stadium of STADIUMS) {
+      const el = markersRef.current[stadium.id];
+      if (!el) continue;
+      const inFilter = filter === "ALL" || stadium.league === filter;
+      el.style.display = inFilter ? "" : "none";
+    }
+
+    // Metro groups override that base pass: collapse into a cluster badge
+    // (hiding the individual members) when zoomed out and 2+ members pass
+    // the filter.
     for (const group of METRO_GROUPS) {
       const visibleMembers = group.filter(
         (s) => filter === "ALL" || s.league === filter,
@@ -72,11 +83,11 @@ export function StadiumMap({
         const countEl = clusterEl.querySelector<HTMLElement>(".pin__count");
         if (countEl) countEl.textContent = String(visibleMembers.length);
       }
-      for (const stadium of group) {
-        const el = markersRef.current[stadium.id];
-        if (!el) continue;
-        const inFilter = filter === "ALL" || stadium.league === filter;
-        el.style.display = inFilter && !showCluster ? "" : "none";
+      if (showCluster) {
+        for (const stadium of group) {
+          const el = markersRef.current[stadium.id];
+          if (el) el.style.display = "none";
+        }
       }
     }
   });
