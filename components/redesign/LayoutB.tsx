@@ -1,13 +1,17 @@
 "use client";
 
-import { useRef } from "react";
+import { useRef, useState } from "react";
 import type { Map as MapboxMap } from "mapbox-gl";
-import { StadiumMap } from "@/components/StadiumMap";
+import { StadiumMap, INITIAL_CENTER, INITIAL_ZOOM } from "@/components/StadiumMap";
 import { MapDetailPanel } from "@/components/MapDetailPanel";
 import { SidebarB } from "./SidebarB";
 import { ZoomControls } from "./ZoomControls";
 import type { League, Stadium, Visit } from "@/lib/types";
 import type { Summary } from "@/lib/stats";
+
+// Show the "reset view" control once zoomed meaningfully past the initial
+// continental-US framing (small margin so it doesn't flicker right at load).
+const ZOOMED_IN_THRESHOLD = INITIAL_ZOOM + 0.5;
 
 interface Props {
   summary: Summary;
@@ -36,6 +40,7 @@ export function LayoutB({
   onRemove,
 }: Props) {
   const mapRef = useRef<MapboxMap | null>(null);
+  const [zoomedIn, setZoomedIn] = useState(false);
 
   return (
     <div className="flex flex-1 flex-col md:flex-row">
@@ -57,6 +62,9 @@ export function LayoutB({
           hideSelectedLabel
           onMapReady={(map) => {
             mapRef.current = map;
+            map.on("zoom", () => {
+              setZoomedIn(map.getZoom() > ZOOMED_IN_THRESHOLD);
+            });
           }}
         />
 
@@ -64,6 +72,41 @@ export function LayoutB({
           onZoomIn={() => mapRef.current?.zoomIn()}
           onZoomOut={() => mapRef.current?.zoomOut()}
         />
+
+        {zoomedIn && (
+          <button
+            onClick={() => {
+              mapRef.current?.easeTo({
+                center: INITIAL_CENTER,
+                zoom: INITIAL_ZOOM,
+                duration: 600,
+              });
+              onSelect(null);
+            }}
+            aria-label="Reset map view"
+            title="Reset map view"
+            style={{
+              position: "absolute",
+              top: 104,
+              right: 20,
+              zIndex: 10,
+              width: 34,
+              height: 34,
+              background: "#fff",
+              borderRadius: 9,
+              boxShadow: "0 3px 10px rgba(0,0,0,0.1)",
+              border: "none",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              fontSize: 16,
+              color: "oklch(30% 0.01 90)",
+              cursor: "pointer",
+            }}
+          >
+            ⟲
+          </button>
+        )}
 
         <div
           className={`${selected ? "block" : "hidden"} md:block`}

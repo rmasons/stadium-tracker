@@ -9,10 +9,26 @@ import type { League, Stadium } from "@/lib/types";
 
 const MAPBOX_TOKEN = process.env.NEXT_PUBLIC_MAPBOX_TOKEN;
 
+// Frames the continental US + southern Canada — where every stadium is.
+export const INITIAL_CENTER: [number, number] = [-96, 44];
+export const INITIAL_ZOOM = 3.4;
+
 // Below this zoom, a co-located metro group (NYC, LA, Miami, Bay Area, ...)
 // collapses into a single count badge instead of overlapping dots. Chosen so
 // a 30km-radius group is comfortably separated in screen pixels once expanded.
 const CLUSTER_MAX_ZOOM = 7.5;
+
+// Keep panning within where the stadiums actually are (derived from the data,
+// not hand-picked, so it stays correct if a stadium is added outside the
+// current footprint). Generous degree padding so the edge stadiums aren't
+// pinned right at the pannable boundary.
+const BOUNDS_PADDING_DEG = 6;
+const STADIUM_LATS = STADIUMS.map((s) => s.lat);
+const STADIUM_LNGS = STADIUMS.map((s) => s.lng);
+const MAX_BOUNDS: [[number, number], [number, number]] = [
+  [Math.min(...STADIUM_LNGS) - BOUNDS_PADDING_DEG, Math.min(...STADIUM_LATS) - BOUNDS_PADDING_DEG],
+  [Math.max(...STADIUM_LNGS) + BOUNDS_PADDING_DEG, Math.max(...STADIUM_LATS) + BOUNDS_PADDING_DEG],
+];
 
 // The bottom detail drawer (MapDetailPanel) floats over the map, so a plain
 // `center` would put a selected stadium right behind it. Bias `easeTo`'s
@@ -104,6 +120,7 @@ export function StadiumMap({
     if (!MAPBOX_TOKEN || !containerRef.current) return;
     let cancelled = false;
     let map: MapboxMap | undefined;
+    let resizeObserver: ResizeObserver | undefined;
 
     void (async () => {
       const mapboxgl = (await import("mapbox-gl")).default;
@@ -113,11 +130,21 @@ export function StadiumMap({
       map = new mapboxgl.Map({
         container: containerRef.current,
         style: "mapbox://styles/mapbox/light-v11",
-        center: [-96, 44], // frames the continental US + southern Canada
-        zoom: 3.4,
+        center: INITIAL_CENTER,
+        zoom: INITIAL_ZOOM,
         minZoom: 2,
         maxZoom: 14,
+        maxBounds: MAX_BOUNDS,
       });
+
+      // The container's final flex-resolved size (sidebar + map sharing a
+      // row) can settle a tick after this runs, leaving the map's canvas
+      // sized for a stale layout — it renders blank until some interaction
+      // (e.g. a trackpad pan) forces Mapbox to recompute. Keep it in sync
+      // with the container's actual size for the life of the map.
+      resizeObserver = new ResizeObserver(() => map?.resize());
+      resizeObserver.observe(containerRef.current);
+
       if (showNavControl) {
         map.addControl(
           new mapboxgl.NavigationControl({ showCompass: false }),
@@ -187,6 +214,7 @@ export function StadiumMap({
 
     return () => {
       cancelled = true;
+      resizeObserver?.disconnect();
       markersRef.current = {};
       clusterMarkersRef.current = {};
       if (map) map.remove();
