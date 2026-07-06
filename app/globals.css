@@ -34,30 +34,62 @@ body {
 }
 
 /* --- Map markers ------------------------------------------------------- */
+/* Each pin is a round team badge: white base, league-colored ring (--ring),
+   and either a team-color abbreviation or (when enabled) a logo image. */
 .stadium-marker {
-  width: 16px;
-  height: 16px;
+  width: 26px;
+  height: 26px;
   border-radius: 9999px;
-  border: 2px solid #ffffff;
+  border: 2px solid var(--ring, #ffffff);
+  background: #ffffff;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.4);
   cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
   transition:
     transform 0.12s ease,
     box-shadow 0.12s ease;
 }
 .stadium-marker:hover {
-  transform: scale(1.35);
+  transform: scale(1.25);
+  z-index: 5;
   box-shadow: 0 2px 6px rgba(0, 0, 0, 0.5);
 }
+.stadium-marker__abbr {
+  display: flex;
+  width: 100%;
+  height: 100%;
+  align-items: center;
+  justify-content: center;
+  color: #ffffff;
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  line-height: 1;
+}
+.stadium-marker__logo {
+  display: none;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+.stadium-marker.has-logo .stadium-marker__logo {
+  display: block;
+}
+.stadium-marker.has-logo .stadium-marker__abbr {
+  display: none;
+}
 .stadium-marker--visited {
-  width: 20px;
-  height: 20px;
-  border-width: 3px;
+  box-shadow:
+    0 0 0 2px #f59e0b,
+    0 1px 3px rgba(0, 0, 0, 0.45);
 }
 .stadium-marker--selected {
-  transform: scale(1.5);
-  outline: 2px solid var(--foreground);
-  outline-offset: 1px;
+  transform: scale(1.35);
+  z-index: 6;
+  border-color: var(--foreground);
 }
 
 /* Mapbox popups inherit our type. */

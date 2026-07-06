@@ -4,9 +4,14 @@ import { useEffect, useRef } from "react";
 import "mapbox-gl/dist/mapbox-gl.css";
 import type { Map as MapboxMap } from "mapbox-gl";
 import { STADIUMS, LEAGUE_COLORS } from "@/lib/stadiums";
+import { getBrand, LOGOS_ENABLED, logoPath } from "@/lib/teams";
+import { computePinOffsets } from "@/lib/pins";
 import type { League, Stadium } from "@/lib/types";
 
 const MAPBOX_TOKEN = process.env.NEXT_PUBLIC_MAPBOX_TOKEN;
+
+// Constant screen-pixel offsets that fan co-located pins apart (computed once).
+const PIN_OFFSETS = computePinOffsets();
 
 interface Props {
   visitedIds: Set<string>;
@@ -56,15 +61,36 @@ export function StadiumMap({
       mapRef.current = map;
 
       for (const stadium of STADIUMS) {
+        const brand = getBrand(stadium.id);
         const el = document.createElement("div");
         el.className = "stadium-marker";
-        el.style.background = LEAGUE_COLORS[stadium.league];
+        el.style.setProperty("--ring", LEAGUE_COLORS[stadium.league]);
         el.title = `${stadium.team} — ${stadium.name}`;
+
+        const abbr = document.createElement("span");
+        abbr.className = "stadium-marker__abbr";
+        abbr.textContent = brand.abbr;
+        abbr.style.background = brand.color;
+        el.appendChild(abbr);
+
+        if (LOGOS_ENABLED) {
+          const img = document.createElement("img");
+          img.className = "stadium-marker__logo";
+          img.alt = "";
+          // Only swap to the logo once it actually loads, so a missing file
+          // falls back to the abbreviation badge (no broken-image icon).
+          img.addEventListener("load", () => el.classList.add("has-logo"));
+          img.src = logoPath(stadium.id);
+          el.appendChild(img);
+        }
+
         el.addEventListener("click", (event) => {
           event.stopPropagation();
           onSelectRef.current(stadium);
         });
-        new mapboxgl.Marker({ element: el })
+
+        const [dx, dy] = PIN_OFFSETS.get(stadium.id) ?? [0, 0];
+        new mapboxgl.Marker({ element: el, offset: [dx, dy] })
           .setLngLat([stadium.lng, stadium.lat])
           .addTo(map);
         markersRef.current[stadium.id] = el;

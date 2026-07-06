@@ -3,8 +3,11 @@
 Track the MLB and NFL stadiums you've visited, log the date and opponent for
 each visit, and share a public map of your trackers with friends.
 
-- **Map** of all **30 MLB + 32 NFL** stadiums across the US & Canada, pins
-  color-coded by league (MLB blue, NFL red), with an **All / MLB / NFL filter**.
+- **Map** of all **30 MLB + 32 NFL** stadiums across the US & Canada. Each pin
+  is a **team badge** (team color + abbreviation, with a blue/red league ring),
+  and an **All / MLB / NFL filter**. Same-city venues (Detroit, Philly,
+  Baltimore, …) automatically **fan apart** so no pin hides behind another.
+  Optional **team logos** — see [`public/logos/README.md`](public/logos/README.md).
 - **Google sign-in** via Firebase Auth.
 - Click a pin → **log a visit** (date + opponent). Been more than once?
   **Log repeat visits** — each is its own record.
@@ -196,7 +199,7 @@ on the repo for the review Actions to post comments.
 
 ### Testing
 
-The suite (Vitest, **43 tests**) covers pure logic in Node and React components
+The suite (Vitest, **54 tests**) covers pure logic in Node and React components
 in jsdom, so behavior is verified without a browser or live Firebase:
 
 - [`lib/stadiums.test.ts`](lib/stadiums.test.ts) — data integrity: exactly
@@ -207,6 +210,10 @@ in jsdom, so behavior is verified without a browser or live Firebase:
   repeat visits), completion %, league filter, and share summary.
 - [`lib/sort.test.ts`](lib/sort.test.ts) — the visited-list sort, including the
   "empty dates always sort last" rule and one row per repeat visit.
+- [`lib/teams.test.ts`](lib/teams.test.ts) — every team has a brand; league-unique
+  abbreviations; valid colors.
+- [`lib/pins.test.ts`](lib/pins.test.ts) — pin declutter: co-located pins fan
+  apart with distinct offsets, isolated pins stay put.
 - [`components/VisitedList.test.tsx`](components/VisitedList.test.tsx) and
   [`components/StadiumDetail.test.tsx`](components/StadiumDetail.test.tsx) —
   render, sorting, add/remove visits (incl. repeat visits), and read-only mode,
