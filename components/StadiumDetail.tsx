@@ -1,7 +1,7 @@
 "use client";
 
-import { useState } from "react";
-import { LEAGUE_COLORS } from "@/lib/stadiums";
+import { useMemo, useState } from "react";
+import { LEAGUE_COLORS, opponentsFor } from "@/lib/stadiums";
 import type { Stadium, Visit } from "@/lib/types";
 
 interface Props {
@@ -27,6 +27,8 @@ export function StadiumDetail({
   const [opponent, setOpponent] = useState("");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  const opponents = useMemo(() => opponentsFor(stadium), [stadium]);
 
   // Most recent visit first.
   const ordered = [...visits].sort((a, b) => b.createdAt - a.createdAt);
@@ -138,13 +140,18 @@ export function StadiumDetail({
             </label>
             <label className="block text-sm">
               <span className="mb-1 block font-medium">Opponent</span>
-              <input
-                type="text"
+              <select
                 value={opponent}
                 onChange={(e) => setOpponent(e.target.value)}
-                placeholder="e.g. New York Yankees"
                 className="w-full rounded-md border border-border bg-background px-3 py-2"
-              />
+              >
+                <option value="">— Unknown / not recorded —</option>
+                {opponents.map((team) => (
+                  <option key={team} value={team}>
+                    {team}
+                  </option>
+                ))}
+              </select>
             </label>
 
             {error && <p className="text-sm text-nfl">{error}</p>}
