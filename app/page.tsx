@@ -59,7 +59,7 @@ export default function HomePage() {
   };
 
   return (
-    <div className="relative flex flex-1 flex-col min-h-0">
+    <div className="relative flex flex-1 flex-col min-h-0 overflow-hidden">
       {!configured && (
         <div className="pointer-events-none absolute left-4 top-4 z-30 max-w-xs rounded-lg border border-border bg-card/95 px-3 py-2 text-xs text-muted shadow-sm backdrop-blur md:left-[356px]">
           Firebase isn&apos;t configured yet, so sign-in and tracking are

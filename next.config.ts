@@ -6,9 +6,10 @@ const nextConfig: NextConfig = {
   turbopack: {
     root: __dirname,
   },
-  // Allow the LAN IP so the Claude-in-Chrome extension can reach the dev
-  // server via 192.168.x.x (localhost is blocked by the extension).
-  allowedDevOrigins: ["192.168.1.215"],
+  // Allow a LAN IP so browser automation tools can reach the dev server when
+  // localhost is blocked at the OS network boundary. Set DEV_LAN_IP=x.x.x.x
+  // in .env.local; omitting it is safe (just disables LAN access).
+  ...(process.env.DEV_LAN_IP ? { allowedDevOrigins: [process.env.DEV_LAN_IP] } : {}),
 };
 
 export default nextConfig;
