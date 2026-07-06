@@ -2,16 +2,18 @@
 
 import { useRef, useState } from "react";
 import type { Map as MapboxMap } from "mapbox-gl";
-import { StadiumMap, INITIAL_CENTER, INITIAL_ZOOM } from "@/components/StadiumMap";
+import { StadiumMap, MAX_BOUNDS, BOUNDS_FIT_PADDING } from "@/components/StadiumMap";
 import { MapDetailPanel } from "@/components/MapDetailPanel";
 import { SidebarB } from "./SidebarB";
 import { ZoomControls } from "./ZoomControls";
 import type { League, Stadium, Visit } from "@/lib/types";
 import type { Summary } from "@/lib/stats";
 
-// Show the "reset view" control once zoomed meaningfully past the initial
-// continental-US framing (small margin so it doesn't flicker right at load).
-const ZOOMED_IN_THRESHOLD = INITIAL_ZOOM + 0.5;
+// Margin above the fitted-to-MAX_BOUNDS zoom before showing "reset view" —
+// the fitted zoom itself varies with the container's aspect ratio (mobile
+// portrait vs desktop landscape), so this is computed live via
+// cameraForBounds rather than compared against a fixed constant.
+const ZOOMED_IN_MARGIN = 0.5;
 
 interface Props {
   summary: Summary;
@@ -63,7 +65,14 @@ export function LayoutB({
           onMapReady={(map) => {
             mapRef.current = map;
             map.on("zoom", () => {
-              setZoomedIn(map.getZoom() > ZOOMED_IN_THRESHOLD);
+              const fitted = map.cameraForBounds(MAX_BOUNDS, {
+                padding: BOUNDS_FIT_PADDING,
+              });
+              const fittedZoom = fitted?.zoom;
+              setZoomedIn(
+                typeof fittedZoom === "number" &&
+                  map.getZoom() > fittedZoom + ZOOMED_IN_MARGIN,
+              );
             });
           }}
         />
@@ -76,9 +85,8 @@ export function LayoutB({
         {zoomedIn && (
           <button
             onClick={() => {
-              mapRef.current?.easeTo({
-                center: INITIAL_CENTER,
-                zoom: INITIAL_ZOOM,
+              mapRef.current?.fitBounds(MAX_BOUNDS, {
+                padding: BOUNDS_FIT_PADDING,
                 duration: 600,
               });
               onSelect(null);

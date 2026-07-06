@@ -9,7 +9,9 @@ import type { League, Stadium } from "@/lib/types";
 
 const MAPBOX_TOKEN = process.env.NEXT_PUBLIC_MAPBOX_TOKEN;
 
-// Frames the continental US + southern Canada — where every stadium is.
+// Placeholder camera for the constructor — immediately replaced by a
+// fitBounds() to MAX_BOUNDS once the container's real size is known (see
+// the resizeObserver below), so this value doesn't need to be accurate.
 export const INITIAL_CENTER: [number, number] = [-96, 44];
 export const INITIAL_ZOOM = 3.4;
 
@@ -21,14 +23,25 @@ const CLUSTER_MAX_ZOOM = 7.5;
 // Keep panning within where the stadiums actually are (derived from the data,
 // not hand-picked, so it stays correct if a stadium is added outside the
 // current footprint). Generous degree padding so the edge stadiums aren't
-// pinned right at the pannable boundary.
+// pinned right at the pannable boundary. NOTE: this box is deliberately
+// tighter than "the whole world" — the initial/reset view is framed by
+// fitBounds()-ing to exactly this box (see below and LayoutB's reset
+// button), not by a hand-picked zoom level. A fixed zoom that doesn't
+// match this box's aspect ratio would conflict with maxBounds: Mapbox
+// refuses to ever show area outside maxBounds, so if a fixed zoom were too
+// far out for a given container's aspect ratio, it would forcibly zoom in
+// and recenter to whatever the constraint math lands on — not the
+// framing we asked for.
 const BOUNDS_PADDING_DEG = 6;
 const STADIUM_LATS = STADIUMS.map((s) => s.lat);
 const STADIUM_LNGS = STADIUMS.map((s) => s.lng);
-const MAX_BOUNDS: [[number, number], [number, number]] = [
+export const MAX_BOUNDS: [[number, number], [number, number]] = [
   [Math.min(...STADIUM_LNGS) - BOUNDS_PADDING_DEG, Math.min(...STADIUM_LATS) - BOUNDS_PADDING_DEG],
   [Math.max(...STADIUM_LNGS) + BOUNDS_PADDING_DEG, Math.max(...STADIUM_LATS) + BOUNDS_PADDING_DEG],
 ];
+// Padding (px) so the outermost stadiums aren't pinned right at the edge
+// of the viewport when framed via fitBounds.
+export const BOUNDS_FIT_PADDING = 24;
 
 // The bottom detail drawer (MapDetailPanel) floats over the map, so a plain
 // `center` would put a selected stadium right behind it. Bias `easeTo`'s
@@ -148,15 +161,17 @@ export function StadiumMap({
       // sized for a stale layout — it renders blank until some interaction
       // (e.g. a trackpad pan) forces Mapbox to recompute. Keep it in sync
       // with the container's actual size for the life of the map, and the
-      // first time we see a real (non-zero) size, re-assert the intended
-      // initial framing before locking in maxBounds.
+      // first time we see a real (non-zero) size, frame the initial view by
+      // fitting to MAX_BOUNDS (so the zoom is always correct for whatever
+      // this container's actual aspect ratio is) before locking panning to
+      // that same box.
       let boundsApplied = false;
       resizeObserver = new ResizeObserver((entries) => {
         map?.resize();
         const { width, height } = entries[0].contentRect;
         if (!boundsApplied && width > 0 && height > 0) {
           boundsApplied = true;
-          map?.jumpTo({ center: INITIAL_CENTER, zoom: INITIAL_ZOOM });
+          map?.fitBounds(MAX_BOUNDS, { padding: BOUNDS_FIT_PADDING, duration: 0 });
           map?.setMaxBounds(MAX_BOUNDS);
         }
       });
