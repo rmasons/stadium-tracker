@@ -57,7 +57,7 @@ body {
 .pin__body {
   position: absolute;
   inset: 0;
-  clip-path: path('M 20 53 Q 3 41 3 18 A 17 17 0 0 1 37 18 Q 37 41 20 53 Z');
+  clip-path: path('M 20 53 Q 3 47 3 18 A 17 17 0 0 1 37 18 Q 37 47 20 53 Z');
 }
 .pin[data-league="MLB"] .pin__body { background: var(--mlb); }
 .pin[data-league="NFL"] .pin__body { background: var(--nfl); }
