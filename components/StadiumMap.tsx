@@ -4,6 +4,7 @@ import { useEffect, useRef } from "react";
 import "mapbox-gl/dist/mapbox-gl.css";
 import type { Map as MapboxMap } from "mapbox-gl";
 import { STADIUMS } from "@/lib/stadiums";
+import { getLogoUrl } from "@/lib/logos";
 import { computePinOffsets, metroGroups, centroid } from "@/lib/pins";
 import type { League, Stadium } from "@/lib/types";
 
@@ -179,6 +180,19 @@ export function StadiumMap({
         el.dataset.league = stadium.league;
         el.title = `${stadium.team} — ${stadium.name}`;
 
+        // Circular head holds the team logo.
+        const head = document.createElement("div");
+        head.className = "pin__head";
+        const logoUrl = getLogoUrl(stadium.id);
+        if (logoUrl) {
+          const img = document.createElement("img");
+          img.src = logoUrl;
+          img.alt = "";
+          img.className = "pin__logo";
+          head.appendChild(img);
+        }
+        el.appendChild(head);
+
         const tip = document.createElement("span");
         tip.className = "pin__tip";
         tip.textContent = stadium.name;
@@ -197,7 +211,8 @@ export function StadiumMap({
         });
 
         const [dx, dy] = PIN_OFFSETS.get(stadium.id) ?? [0, 0];
-        new mapboxgl.Marker({ element: el, offset: [dx, dy] })
+        // anchor:'bottom' puts the tail tip at the lat/lng coordinate.
+        new mapboxgl.Marker({ element: el, anchor: "bottom", offset: [dx, dy] })
           .setLngLat([stadium.lng, stadium.lat])
           .addTo(map);
         markersRef.current[stadium.id] = el;
