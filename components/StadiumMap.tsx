@@ -180,7 +180,12 @@ export function StadiumMap({
         el.dataset.league = stadium.league;
         el.title = `${stadium.team} — ${stadium.name}`;
 
-        // Circular head holds the team logo.
+        // Teardrop body — carries the clip-path and league color.
+        // Kept separate from .pin so tooltip/label sit outside the clip boundary.
+        const body = document.createElement("div");
+        body.className = "pin__body";
+
+        // White circle inside the body, holds the team logo.
         const head = document.createElement("div");
         head.className = "pin__head";
         const logoUrl = getLogoUrl(stadium.id);
@@ -191,7 +196,8 @@ export function StadiumMap({
           img.className = "pin__logo";
           head.appendChild(img);
         }
-        el.appendChild(head);
+        body.appendChild(head);
+        el.appendChild(body);
 
         const tip = document.createElement("span");
         tip.className = "pin__tip";
