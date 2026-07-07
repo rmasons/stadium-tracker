@@ -62,6 +62,7 @@ export function LayoutB({
           selectedId={selected?.id ?? null}
           leagueFilter={leagueFilter}
           onSelect={onSelect}
+          visitedIds={visitedIds}
           showNavControl={false}
           hideSelectedLabel
           onMapReady={(map) => {
