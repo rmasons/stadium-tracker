@@ -41,48 +41,52 @@ body {
    the geographic point; the head floats 40px above it. */
 .pin {
   position: relative;
-  width: 48px;
-  height: 63px; /* 48px head + 15px tail */
+  width: 40px;
+  height: 52px; /* 40px head + 12px tail */
   cursor: pointer;
   transform-origin: bottom center;
   transition: transform 0.15s ease-out;
 }
 
-/* Circular head — fills the top 48px of the 63px container. */
+/* Circular head — fills the top 40px of the 52px container. */
 .pin__head {
   position: absolute;
-  inset: 0 0 15px 0;
+  inset: 0 0 12px 0;
   border-radius: 9999px;
   background: #fff;
   display: flex;
   align-items: center;
   justify-content: center;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.18);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.18);
 }
-.pin[data-league="MLB"] .pin__head { border: 3px solid var(--mlb); }
-.pin[data-league="NFL"] .pin__head { border: 3px solid var(--nfl); }
+.pin[data-league="MLB"] .pin__head { border: 2.5px solid var(--mlb); }
+.pin[data-league="NFL"] .pin__head { border: 2.5px solid var(--nfl); }
 
 /* Team logo inside the head. */
 .pin__logo {
-  width: 32px;
-  height: 32px;
+  width: 26px;
+  height: 26px;
   object-fit: contain;
   display: block;
 }
 
-/* Downward tail — apex at bottom:0 = the lat/lng point. */
+/* Downward tail — apex at bottom:0 = the lat/lng point.
+   translateX(-50%) is required: border-trick triangles have an effective
+   box-width equal to left+right border (14px here), so left:50% without
+   the shift places the LEFT edge of that box at center, not the center. */
 .pin::after {
   content: '';
   position: absolute;
   bottom: 0;
   left: 50%;
+  transform: translateX(-50%);
   width: 0;
   height: 0;
-  border-left: 9px solid transparent;
-  border-right: 9px solid transparent;
+  border-left: 7px solid transparent;
+  border-right: 7px solid transparent;
 }
-.pin[data-league="MLB"]::after { border-top: 15px solid var(--mlb); }
-.pin[data-league="NFL"]::after { border-top: 15px solid var(--nfl); }
+.pin[data-league="MLB"]::after { border-top: 12px solid var(--mlb); }
+.pin[data-league="NFL"]::after { border-top: 12px solid var(--nfl); }
 
 .pin:hover {
   transform: scale(1.12);
