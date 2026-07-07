@@ -1,16 +1,16 @@
 name: Promotion Review
 
-# BLOCKING fresh-context review for PROMOTIONS only: dev -> test and test -> main.
+# BLOCKING fresh-context review for PROMOTIONS only: dev -> main.
 # The runner starts clean, so Claude judges the diff on its merits. Unlike the
 # advisory review on feature -> dev, this one FAILS the check (and therefore
 # blocks the merge, via branch protection) if it finds ANY substantive issue.
 #
-# Pair this with branch protection on `test` and `main` that requires the
+# Pair this with branch protection on `main` that requires the
 # `promotion-review` check — see PIPELINE.md.
 on:
   pull_request:
     types: [opened, synchronize, reopened]
-    branches: [test, main]
+    branches: [main]
 
 permissions:
   contents: read
