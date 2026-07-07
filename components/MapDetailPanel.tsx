@@ -17,10 +17,10 @@ interface Props {
 }
 
 const CARD_BASE: CSSProperties = {
-  background: "#fff",
+  background: "var(--card)",
   borderRadius: 16,
-  boxShadow: "0 -8px 30px rgba(0,0,0,0.1)",
-  border: "1px solid oklch(92% 0.005 95)",
+  boxShadow: "0 -8px 30px rgba(0,0,0,0.12)",
+  border: "1px solid var(--border)",
 };
 
 /**
@@ -77,7 +77,7 @@ function PanelBody({
             margin: 0,
             fontSize: 13,
             fontWeight: 600,
-            color: "oklch(50% 0.01 90)",
+            color: "var(--muted)",
           }}
         >
           {emptyHint}
@@ -139,7 +139,7 @@ function PanelBody({
           height: 24,
           border: "none",
           background: "transparent",
-          color: "oklch(60% 0.01 90)",
+          color: "var(--muted)",
           cursor: "pointer",
           borderRadius: 6,
         }}
@@ -162,20 +162,20 @@ function PanelBody({
             borderRadius: 12,
             flexShrink: 0,
             background:
-              "repeating-linear-gradient(45deg, oklch(93% 0.005 95), oklch(93% 0.005 95) 6px, oklch(96% 0.004 95) 6px, oklch(96% 0.004 95) 12px)",
+              "repeating-linear-gradient(45deg, var(--border), var(--border) 6px, var(--surface) 6px, var(--surface) 12px)",
           }}
         />
       )}
       <div style={{ flex: 1, minWidth: 0 }}>
-        <div style={{ fontWeight: 800, fontSize: 16, color: "oklch(18% 0.01 90)" }}>
+        <div style={{ fontWeight: 800, fontSize: 16, color: "var(--foreground)" }}>
           {stadium.name}{" "}
           <span
-            style={{ fontWeight: 600, color: "oklch(50% 0.01 90)", fontSize: 13 }}
+            style={{ fontWeight: 600, color: "var(--muted)", fontSize: 13 }}
           >
             — {stadium.team}
           </span>
         </div>
-        <div style={{ fontSize: 13, color: "oklch(48% 0.01 90)", marginTop: 2 }}>
+        <div style={{ fontSize: 13, color: "var(--muted)", marginTop: 2 }}>
           {meta}
         </div>
       </div>
@@ -183,9 +183,9 @@ function PanelBody({
         <button
           onClick={() => setEditing(true)}
           style={{
-            background: "oklch(96% 0.005 95)",
+            background: "var(--surface)",
             border: "none",
-            color: "oklch(30% 0.01 90)",
+            color: "var(--ink-medium)",
             fontWeight: 700,
             fontSize: 13,
             padding: "9px 14px",

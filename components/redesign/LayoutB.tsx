@@ -102,15 +102,15 @@ export function LayoutB({
               zIndex: 10,
               width: 34,
               height: 34,
-              background: "#fff",
+              background: "var(--card)",
               borderRadius: 9,
-              boxShadow: "0 3px 10px rgba(0,0,0,0.1)",
+              boxShadow: "0 3px 10px rgba(0,0,0,0.15)",
               border: "none",
               display: "flex",
               alignItems: "center",
               justifyContent: "center",
               fontSize: 16,
-              color: "oklch(30% 0.01 90)",
+              color: "var(--ink-medium)",
               cursor: "pointer",
             }}
           >

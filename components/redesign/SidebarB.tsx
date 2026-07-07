@@ -38,15 +38,15 @@ export function SidebarB({
 
   return (
     <div
-      className={`${selectedId ? "hidden" : "flex"} md:flex fixed inset-x-0 bottom-0 z-30 w-full flex-col border-t bg-white md:static md:inset-auto md:z-auto md:h-full md:w-[340px] md:border-r md:border-t-0 ${
+      className={`${selectedId ? "hidden" : "flex"} md:flex fixed inset-x-0 bottom-0 z-30 w-full flex-col border-t bg-card md:static md:inset-auto md:z-auto md:h-full md:w-[340px] md:border-r md:border-t-0 ${
         mobileExpanded ? "max-h-[75vh]" : ""
       }`}
-      style={{ borderColor: "oklch(92% 0.005 95)" }}
+      style={{ borderColor: "var(--border)" }}
     >
       <div
         style={{
           padding: "22px 20px 16px",
-          borderBottom: "1px solid oklch(93% 0.005 95)",
+          borderBottom: "1px solid var(--border)",
           flexShrink: 0,
         }}
       >
@@ -61,7 +61,7 @@ export function SidebarB({
               style={{
                 fontWeight: 800,
                 fontSize: 17,
-                color: "oklch(18% 0.01 90)",
+                color: "var(--foreground)",
                 letterSpacing: "-0.01em",
               }}
             >
@@ -113,7 +113,7 @@ export function SidebarB({
       <div
         style={{
           padding: "16px 20px",
-          borderTop: "1px solid oklch(93% 0.005 95)",
+          borderTop: "1px solid var(--border)",
           flexShrink: 0,
         }}
       >
@@ -129,7 +129,7 @@ export function SidebarB({
             )}
             <Link
               href="/tracker"
-              style={{ flex: 1, fontSize: 13, fontWeight: 700, color: "oklch(25% 0.01 90)" }}
+              style={{ flex: 1, fontSize: 13, fontWeight: 700, color: "var(--ink-medium)" }}
             >
               My Tracker
             </Link>
@@ -137,8 +137,8 @@ export function SidebarB({
               onClick={() => void signOut()}
               style={{
                 background: "transparent",
-                border: "1.5px solid oklch(80% 0.01 90)",
-                color: "oklch(25% 0.01 90)",
+                border: "1.5px solid var(--border)",
+                color: "var(--ink-medium)",
                 fontWeight: 700,
                 fontSize: 13,
                 padding: "8px 12px",

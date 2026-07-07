@@ -131,15 +131,19 @@ export function StadiumMap({
     let cancelled = false;
     let map: MapboxMap | undefined;
     let resizeObserver: ResizeObserver | undefined;
+    let mqCleanup: (() => void) | undefined;
 
     void (async () => {
       const mapboxgl = (await import("mapbox-gl")).default;
       if (cancelled || !containerRef.current) return;
 
       mapboxgl.accessToken = MAPBOX_TOKEN;
+      const mq = window.matchMedia("(prefers-color-scheme: dark)");
+      const mapStyle = (dark: boolean) =>
+        dark ? "mapbox://styles/mapbox/dark-v11" : "mapbox://styles/mapbox/light-v11";
       map = new mapboxgl.Map({
         container: containerRef.current,
-        style: "mapbox://styles/mapbox/light-v11",
+        style: mapStyle(mq.matches),
         center: INITIAL_CENTER,
         zoom: INITIAL_ZOOM,
         minZoom: 2,
@@ -250,11 +254,18 @@ export function StadiumMap({
 
       refreshClusters.current();
       map.on("zoom", refreshClusters.current);
+
+      const onThemeChange = (e: MediaQueryListEvent) => {
+        map?.setStyle(mapStyle(e.matches));
+      };
+      mq.addEventListener("change", onThemeChange);
+      mqCleanup = () => mq.removeEventListener("change", onThemeChange);
     })();
 
     return () => {
       cancelled = true;
       resizeObserver?.disconnect();
+      mqCleanup?.();
       markersRef.current = {};
       clusterMarkersRef.current = {};
       if (map) map.remove();

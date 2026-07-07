@@ -13,7 +13,7 @@ export function StatTile({
     <div
       style={{
         flex: 1,
-        background: "oklch(97% 0.006 95)",
+        background: "var(--surface)",
         borderRadius: 10,
         padding: "10px 12px",
       }}
@@ -21,7 +21,7 @@ export function StatTile({
       <div style={{ fontSize: 20, fontWeight: 800, color }}>
         {value}
         <span
-          style={{ fontSize: 12, fontWeight: 600, color: "oklch(55% 0.01 90)" }}
+          style={{ fontSize: 12, fontWeight: 600, color: "var(--muted)" }}
         >
           /{total}
         </span>
@@ -30,7 +30,7 @@ export function StatTile({
         style={{
           fontSize: 11,
           fontWeight: 700,
-          color: "oklch(50% 0.01 90)",
+          color: "var(--muted)",
           textTransform: "uppercase",
           letterSpacing: "0.03em",
         }}

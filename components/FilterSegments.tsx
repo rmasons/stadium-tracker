@@ -42,11 +42,11 @@ export function FilterSegments({
               padding: isSidebar ? "8px 0" : "7px 0",
               borderRadius: 8,
               background: active
-                ? "oklch(20% 0.01 90)"
+                ? "var(--foreground)"
                 : isSidebar
-                  ? "oklch(97% 0.006 95)"
+                  ? "var(--surface)"
                   : "transparent",
-              color: active ? "#fff" : "oklch(45% 0.01 90)",
+              color: active ? "var(--background)" : "var(--muted)",
               fontSize: isSidebar ? 13 : 12.5,
               fontWeight: active ? 700 : 600,
               display: "flex",
