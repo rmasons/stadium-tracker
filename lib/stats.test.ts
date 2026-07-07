@@ -1,17 +1,27 @@
 import { describe, it, expect } from "vitest";
-import { summarize, filterByLeague, shareSummary } from "./stats";
-import { MLB_STADIUMS, NFL_STADIUMS, STADIUMS } from "./stadiums";
+import {
+  summarize,
+  filterByLeague,
+  shareSummary,
+  visitsByYear,
+  topOpponents,
+  multiVisitedStadiums,
+} from "./stats";
+import { MLB_STADIUMS, NFL_STADIUMS, STADIUMS, getStadium } from "./stadiums";
 import type { Visit } from "./types";
 
 let seq = 0;
-function visit(stadiumId: string): Visit {
+function visit(
+  stadiumId: string,
+  opts: { date?: string; opponent?: string } = {},
+): Visit {
   seq += 1;
   return {
     id: `v${seq}`,
     stadiumId,
     league: "MLB",
-    date: "",
-    opponent: "",
+    date: opts.date ?? "",
+    opponent: opts.opponent ?? "",
     createdAt: 0,
     updatedAt: 0,
   };
@@ -108,5 +118,160 @@ describe("shareSummary", () => {
     expect(shareSummary("Alex", [])).toBe(
       "Alex hasn't visited any stadiums yet.",
     );
+  });
+});
+
+describe("visitsByYear", () => {
+  it("returns empty array for no visits", () => {
+    expect(visitsByYear([])).toEqual([]);
+  });
+
+  it("returns empty array when all visits have no date", () => {
+    const visits = [
+      visit("mlb-yankees"),
+      visit("mlb-redsox"),
+    ];
+    expect(visitsByYear(visits)).toEqual([]);
+  });
+
+  it("groups visits by year and returns most recent first", () => {
+    const visits = [
+      visit("mlb-yankees", { date: "2023-04-01" }),
+      visit("mlb-redsox", { date: "2023-07-15" }),
+      visit("nfl-jets", { date: "2024-09-10" }),
+      visit("mlb-mets", { date: "2022-06-20" }),
+    ];
+    const result = visitsByYear(visits);
+    expect(result).toEqual([
+      { year: "2024", count: 1 },
+      { year: "2023", count: 2 },
+      { year: "2022", count: 1 },
+    ]);
+  });
+
+  it("skips visits with an empty date but counts those with dates", () => {
+    const visits = [
+      visit("mlb-yankees", { date: "2023-05-01" }),
+      visit("mlb-redsox"), // no date — skipped
+    ];
+    const result = visitsByYear(visits);
+    expect(result).toEqual([{ year: "2023", count: 1 }]);
+  });
+
+  it("handles a single visit", () => {
+    const result = visitsByYear([visit("mlb-yankees", { date: "2021-03-30" })]);
+    expect(result).toEqual([{ year: "2021", count: 1 }]);
+  });
+});
+
+describe("topOpponents", () => {
+  it("returns empty array for no visits", () => {
+    expect(topOpponents([])).toEqual([]);
+  });
+
+  it("skips visits with an empty opponent", () => {
+    const visits = [
+      visit("mlb-yankees"), // opponent ""
+      visit("mlb-yankees"), // opponent ""
+    ];
+    expect(topOpponents(visits)).toEqual([]);
+  });
+
+  it("groups by opponent and sorts by count descending", () => {
+    const visits = [
+      visit("mlb-yankees", { opponent: "Boston Red Sox" }),
+      visit("mlb-yankees", { opponent: "Boston Red Sox" }),
+      visit("mlb-yankees", { opponent: "Toronto Blue Jays" }),
+      visit("mlb-mets", { opponent: "Philadelphia Phillies" }),
+    ];
+    const result = topOpponents(visits);
+    expect(result[0]).toEqual({ opponent: "Boston Red Sox", count: 2 });
+    expect(result).toHaveLength(3);
+  });
+
+  it("breaks ties alphabetically", () => {
+    const visits = [
+      visit("mlb-yankees", { opponent: "Zebra Team" }),
+      visit("mlb-yankees", { opponent: "Alpha Team" }),
+    ];
+    const result = topOpponents(visits);
+    expect(result[0].opponent).toBe("Alpha Team");
+    expect(result[1].opponent).toBe("Zebra Team");
+  });
+
+  it("limits to the specified number", () => {
+    const opponents = ["A", "B", "C", "D", "E", "F"];
+    const visits = opponents.map((o) =>
+      visit("mlb-yankees", { opponent: o }),
+    );
+    expect(topOpponents(visits, 3)).toHaveLength(3);
+  });
+
+  it("defaults to a limit of 10", () => {
+    const opponents = Array.from({ length: 15 }, (_, i) => `Team ${i}`);
+    const visits = opponents.map((o) =>
+      visit("mlb-yankees", { opponent: o }),
+    );
+    expect(topOpponents(visits)).toHaveLength(10);
+  });
+});
+
+describe("multiVisitedStadiums", () => {
+  it("returns empty array for no visits", () => {
+    expect(multiVisitedStadiums([])).toEqual([]);
+  });
+
+  it("returns empty array when no stadium is visited more than once", () => {
+    const visits = [
+      visit("mlb-yankees"),
+      visit("mlb-redsox"),
+      visit("nfl-jets"),
+    ];
+    expect(multiVisitedStadiums(visits)).toEqual([]);
+  });
+
+  it("includes stadiums visited more than once with the correct count", () => {
+    const visits = [
+      visit("mlb-yankees"),
+      visit("mlb-yankees"),
+      visit("mlb-yankees"),
+      visit("mlb-redsox"),
+      visit("mlb-redsox"),
+      visit("nfl-jets"),
+    ];
+    const result = multiVisitedStadiums(visits);
+    expect(result).toHaveLength(2);
+    expect(result[0]).toEqual({
+      stadium: getStadium("mlb-yankees"),
+      visitCount: 3,
+    });
+    expect(result[1]).toEqual({
+      stadium: getStadium("mlb-redsox"),
+      visitCount: 2,
+    });
+  });
+
+  it("skips unknown stadium ids", () => {
+    const visits = [
+      visit("mlb-yankees"),
+      visit("mlb-yankees"),
+      visit("bogus-id"),
+      visit("bogus-id"),
+    ];
+    const result = multiVisitedStadiums(visits);
+    expect(result).toHaveLength(1);
+    expect(result[0].stadium.id).toBe("mlb-yankees");
+  });
+
+  it("sorts by visit count descending, then alphabetically by name on ties", () => {
+    const visits = [
+      visit("nfl-jets"),
+      visit("nfl-jets"),
+      visit("mlb-yankees"),
+      visit("mlb-yankees"),
+    ];
+    const result = multiVisitedStadiums(visits);
+    // Both have count 2 — sort by stadium name alphabetically
+    expect(result[0].stadium.name.localeCompare(result[1].stadium.name)).toBeLessThan(1);
   });
 });

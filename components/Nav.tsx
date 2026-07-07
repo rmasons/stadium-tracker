@@ -34,6 +34,18 @@ export function Nav() {
               My Tracker
             </Link>
           )}
+          {user && (
+            <Link
+              href="/stats"
+              className={
+                pathname === "/stats"
+                  ? "text-sm font-bold text-foreground"
+                  : "text-sm text-muted hover:text-foreground"
+              }
+            >
+              Stats
+            </Link>
+          )}
         </div>
 
         <div className="flex items-center gap-3">
