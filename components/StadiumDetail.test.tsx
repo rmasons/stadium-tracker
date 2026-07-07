@@ -216,6 +216,8 @@ describe("StadiumDetail", () => {
       }),
     );
     // Form collapses back to read mode
-    expect(screen.queryByRole("button", { name: /save visit/i })).toBeNull();
+    await waitFor(() =>
+      expect(screen.queryByRole("button", { name: /save visit/i })).toBeNull(),
+    );
   });
 });

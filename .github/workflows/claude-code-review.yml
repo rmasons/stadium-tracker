@@ -1,7 +1,7 @@
 name: Claude Code Review
 
 # Advisory fresh-context review on feature -> dev PRs only.
-# Promotion PRs (dev -> test, test -> main) are handled by promotion-review.yml.
+# Promotion PRs (dev -> main) are handled by promotion-review.yml.
 on:
   pull_request:
     types: [opened, synchronize]

@@ -1,10 +1,10 @@
 name: Build
 
-# Required check on test and main promotions — must pass alongside promotion-review.
+# Required check on dev -> main promotions — must pass alongside promotion-review.
 on:
   pull_request:
     types: [opened, synchronize, reopened]
-    branches: [main, test]
+    branches: [main]
 
 jobs:
   verify:
