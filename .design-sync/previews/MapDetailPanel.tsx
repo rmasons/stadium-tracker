@@ -27,6 +27,7 @@ export function Empty() {
       onClose={() => {}}
       onAdd={async () => {}}
       onRemove={async () => {}}
+      onUpdate={async () => {}}
     />,
   );
 }
@@ -40,6 +41,7 @@ export function Visited() {
       onClose={() => {}}
       onAdd={async () => {}}
       onRemove={async () => {}}
+      onUpdate={async () => {}}
     />,
   );
 }
@@ -53,6 +55,7 @@ export function NotYetVisited() {
       onClose={() => {}}
       onAdd={async () => {}}
       onRemove={async () => {}}
+      onUpdate={async () => {}}
     />,
   );
 }

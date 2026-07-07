@@ -48,6 +48,7 @@ export function WithVisits() {
       onClose={() => {}}
       onAdd={async () => {}}
       onRemove={async () => {}}
+      onUpdate={async () => {}}
     />,
   );
 }
@@ -61,6 +62,7 @@ export function NoVisitsSignedIn() {
       onClose={() => {}}
       onAdd={async () => {}}
       onRemove={async () => {}}
+      onUpdate={async () => {}}
     />,
   );
 }
@@ -74,6 +76,7 @@ export function SignedOut() {
       onClose={() => {}}
       onAdd={async () => {}}
       onRemove={async () => {}}
+      onUpdate={async () => {}}
     />,
   );
 }
