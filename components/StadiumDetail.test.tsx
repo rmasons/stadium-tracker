@@ -6,6 +6,7 @@ import {
   screen,
   fireEvent,
   waitFor,
+  within,
 } from "@testing-library/react";
 import { StadiumDetail } from "./StadiumDetail";
 import { STADIUMS_BY_ID } from "@/lib/stadiums";
@@ -41,6 +42,7 @@ describe("StadiumDetail", () => {
         onClose={vi.fn()}
         onAdd={noop}
         onRemove={noop}
+        onUpdate={noop}
       />,
     );
     expect(screen.getByText("Yankee Stadium")).toBeInTheDocument();
@@ -61,6 +63,7 @@ describe("StadiumDetail", () => {
         onClose={vi.fn()}
         onAdd={noop}
         onRemove={noop}
+        onUpdate={noop}
       />,
     );
     expect(screen.getByText(/been here 2 times/i)).toBeInTheDocument();
@@ -77,12 +80,33 @@ describe("StadiumDetail", () => {
         onClose={vi.fn()}
         onAdd={noop}
         onRemove={noop}
+        onUpdate={noop}
       />,
     );
     expect(screen.getByText(/sign in with google/i)).toBeInTheDocument();
   });
 
-  it("adds a visit with the entered date and opponent", async () => {
+  it("offers same-league opponents and excludes the home team", () => {
+    render(
+      <StadiumDetail
+        stadium={stadium}
+        visits={[]}
+        canEdit
+        onClose={vi.fn()}
+        onAdd={noop}
+        onRemove={noop}
+        onUpdate={noop}
+      />,
+    );
+    const select = screen.getByLabelText(/opponent/i);
+    const options = within(select).getAllByRole("option");
+    const values = options.map((o) => (o as HTMLOptionElement).value);
+    expect(values).toContain("Boston Red Sox");
+    expect(values).not.toContain("New York Yankees"); // the home team
+    expect(values).not.toContain("New York Jets"); // an NFL team
+  });
+
+  it("adds a visit with the entered date and selected opponent", async () => {
     const onAdd = vi.fn().mockResolvedValue(undefined);
     render(
       <StadiumDetail
@@ -92,20 +116,21 @@ describe("StadiumDetail", () => {
         onClose={vi.fn()}
         onAdd={onAdd}
         onRemove={noop}
+        onUpdate={noop}
       />,
     );
     fireEvent.change(screen.getByLabelText(/date visited/i), {
       target: { value: "2024-07-01" },
     });
     fireEvent.change(screen.getByLabelText(/opponent/i), {
-      target: { value: "Red Sox" },
+      target: { value: "Boston Red Sox" },
     });
     fireEvent.click(screen.getByRole("button", { name: /i've been here/i }));
 
     await waitFor(() =>
       expect(onAdd).toHaveBeenCalledWith({
         date: "2024-07-01",
-        opponent: "Red Sox",
+        opponent: "Boston Red Sox",
       }),
     );
   });
@@ -120,6 +145,7 @@ describe("StadiumDetail", () => {
         onClose={vi.fn()}
         onAdd={noop}
         onRemove={onRemove}
+        onUpdate={noop}
       />,
     );
     fireEvent.click(screen.getByRole("button", { name: /remove visit/i }));
@@ -136,9 +162,60 @@ describe("StadiumDetail", () => {
         onClose={onClose}
         onAdd={noop}
         onRemove={noop}
+        onUpdate={noop}
       />,
     );
     fireEvent.click(screen.getByRole("button", { name: /close/i }));
     expect(onClose).toHaveBeenCalled();
+  });
+
+  it("opens inline edit form pre-populated when edit button is clicked", () => {
+    render(
+      <StadiumDetail
+        stadium={stadium}
+        visits={[visit("v1", "2024-05-01", "Boston Red Sox", 1)]}
+        canEdit
+        onClose={vi.fn()}
+        onAdd={noop}
+        onRemove={noop}
+        onUpdate={noop}
+      />,
+    );
+    fireEvent.click(screen.getByRole("button", { name: /edit visit/i }));
+    expect(screen.getByLabelText(/edit date visited/i)).toHaveValue("2024-05-01");
+    expect(screen.getByLabelText(/edit opponent/i)).toHaveValue("Boston Red Sox");
+    expect(screen.getByRole("button", { name: /save visit/i })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /cancel/i })).toBeInTheDocument();
+  });
+
+  it("calls onUpdate with edited values and closes the form", async () => {
+    const onUpdate = vi.fn().mockResolvedValue(undefined);
+    render(
+      <StadiumDetail
+        stadium={stadium}
+        visits={[visit("v1", "2024-05-01", "Boston Red Sox", 1)]}
+        canEdit
+        onClose={vi.fn()}
+        onAdd={noop}
+        onRemove={noop}
+        onUpdate={onUpdate}
+      />,
+    );
+    fireEvent.click(screen.getByRole("button", { name: /edit visit/i }));
+    fireEvent.change(screen.getByLabelText(/edit date visited/i), {
+      target: { value: "2025-06-15" },
+    });
+    fireEvent.change(screen.getByLabelText(/edit opponent/i), {
+      target: { value: "Tampa Bay Rays" },
+    });
+    fireEvent.click(screen.getByRole("button", { name: /save visit/i }));
+    await waitFor(() =>
+      expect(onUpdate).toHaveBeenCalledWith("v1", {
+        date: "2025-06-15",
+        opponent: "Tampa Bay Rays",
+      }),
+    );
+    // Form collapses back to read mode
+    expect(screen.queryByRole("button", { name: /save visit/i })).toBeNull();
   });
 });

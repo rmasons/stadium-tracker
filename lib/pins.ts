@@ -27,7 +27,10 @@ export function distanceKm(a: LatLng, b: LatLng): number {
 }
 
 /** Single-linkage grouping: stadiums linked when within thresholdKm. */
-function cluster(stadiums: Stadium[], thresholdKm: number): Stadium[][] {
+export function groupStadiums(
+  stadiums: Stadium[],
+  thresholdKm: number,
+): Stadium[][] {
   const parent = stadiums.map((_, i) => i);
   const find = (i: number): number =>
     parent[i] === i ? i : (parent[i] = find(parent[i]));
@@ -70,7 +73,7 @@ export function computePinOffsets(
   const radiusPx = opts.radiusPx ?? 13;
   const result = new Map<string, [number, number]>();
 
-  for (const group of cluster(STADIUMS, thresholdKm)) {
+  for (const group of groupStadiums(STADIUMS, thresholdKm)) {
     if (group.length === 1) {
       result.set(group[0].id, [0, 0]);
       continue;
@@ -86,4 +89,17 @@ export function computePinOffsets(
     });
   }
   return result;
+}
+
+/** Mean lat/lng of a group of stadiums — where a cluster marker is placed. */
+export function centroid(stadiums: Stadium[]): LatLng {
+  const lat = stadiums.reduce((sum, s) => sum + s.lat, 0) / stadiums.length;
+  const lng = stadiums.reduce((sum, s) => sum + s.lng, 0) / stadiums.length;
+  return { lat, lng };
+}
+
+/** Co-located metro groups with 2+ stadiums — the candidates for a single
+ *  cluster marker when the map is zoomed out too far to tell them apart. */
+export function metroGroups(thresholdKm = 30): Stadium[][] {
+  return groupStadiums(STADIUMS, thresholdKm).filter((g) => g.length > 1);
 }

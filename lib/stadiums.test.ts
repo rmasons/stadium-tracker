@@ -5,6 +5,7 @@ import {
   STADIUMS,
   STADIUMS_BY_ID,
   getStadium,
+  opponentsFor,
   LEAGUE_COLORS,
 } from "./stadiums";
 
@@ -60,7 +61,37 @@ describe("stadium data integrity", () => {
   });
 
   it("defines a color for each league", () => {
-    expect(LEAGUE_COLORS.MLB).toMatch(/^#[0-9a-f]{6}$/i);
-    expect(LEAGUE_COLORS.NFL).toMatch(/^#[0-9a-f]{6}$/i);
+    expect(LEAGUE_COLORS.MLB).toMatch(/^var\(--\w+\)$/);
+    expect(LEAGUE_COLORS.NFL).toMatch(/^var\(--\w+\)$/);
+    expect(LEAGUE_COLORS.MLB).not.toBe(LEAGUE_COLORS.NFL);
+  });
+});
+
+describe("opponentsFor", () => {
+  it("lists the other 29 MLB teams for an MLB stadium", () => {
+    const yankees = getStadium("mlb-yankees")!;
+    const opps = opponentsFor(yankees);
+    expect(opps).toHaveLength(29);
+    expect(opps).not.toContain("New York Yankees");
+    expect(opps).toContain("Boston Red Sox");
+  });
+
+  it("lists the other 31 NFL teams for an NFL stadium", () => {
+    const jets = getStadium("nfl-jets")!;
+    const opps = opponentsFor(jets);
+    expect(opps).toHaveLength(31);
+    expect(opps).not.toContain("New York Jets");
+    expect(opps).toContain("New York Giants");
+  });
+
+  it("only includes teams from the same league", () => {
+    const yankees = getStadium("mlb-yankees")!;
+    const mlbTeams = new Set(MLB_STADIUMS.map((s) => s.team));
+    expect(opponentsFor(yankees).every((t) => mlbTeams.has(t))).toBe(true);
+  });
+
+  it("returns the opponents sorted alphabetically", () => {
+    const opps = opponentsFor(getStadium("mlb-yankees")!);
+    expect(opps).toEqual([...opps].sort());
   });
 });

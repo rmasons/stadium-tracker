@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { distanceKm, computePinOffsets } from "./pins";
+import { distanceKm, computePinOffsets, metroGroups, centroid } from "./pins";
 import { getStadium } from "./stadiums";
 
 function coord(id: string) {
@@ -48,5 +48,35 @@ describe("computePinOffsets", () => {
     const mag = Math.hypot(dx, dy);
     expect(mag).toBeGreaterThan(8);
     expect(mag).toBeLessThan(16);
+  });
+});
+
+describe("metroGroups", () => {
+  const groups = metroGroups();
+
+  it("only includes groups of 2+ stadiums", () => {
+    for (const group of groups) {
+      expect(group.length).toBeGreaterThanOrEqual(2);
+    }
+  });
+
+  it("excludes an isolated stadium (Lambeau Field)", () => {
+    const ids = groups.flatMap((g) => g.map((s) => s.id));
+    expect(ids).not.toContain("nfl-packers");
+  });
+
+  it("groups co-located Tigers/Lions together", () => {
+    const group = groups.find((g) => g.some((s) => s.id === "mlb-tigers"));
+    expect(group?.map((s) => s.id)).toContain("nfl-lions");
+  });
+});
+
+describe("centroid", () => {
+  it("averages lat/lng across the group", () => {
+    const tigers = getStadium("mlb-tigers")!;
+    const lions = getStadium("nfl-lions")!;
+    const point = centroid([tigers, lions]);
+    expect(point.lat).toBeCloseTo((tigers.lat + lions.lat) / 2);
+    expect(point.lng).toBeCloseTo((tigers.lng + lions.lng) / 2);
   });
 });

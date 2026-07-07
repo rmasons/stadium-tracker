@@ -1,13 +1,14 @@
 @import "tailwindcss";
 
 :root {
-  --background: #f8fafc; /* slate-50 */
-  --foreground: #0f172a; /* slate-900 */
+  --background: oklch(96% 0.006 95); /* warm off-white */
+  --foreground: oklch(18% 0.01 90); /* ink */
   --card: #ffffff;
-  --border: #e2e8f0; /* slate-200 */
-  --muted: #64748b; /* slate-500 */
-  --mlb: #2563eb; /* blue-600 */
-  --nfl: #dc2626; /* red-600 */
+  --border: oklch(92% 0.005 95);
+  --muted: oklch(50% 0.01 90);
+  --mlb: oklch(55% 0.14 250); /* blue */
+  --nfl: oklch(55% 0.14 25); /* red-orange */
+  --cluster: oklch(45% 0.01 90); /* neutral dark, "mixed/multiple" badge */
 }
 
 @theme inline {
@@ -18,6 +19,9 @@
   --color-muted: var(--muted);
   --color-mlb: var(--mlb);
   --color-nfl: var(--nfl);
+  --color-cluster: var(--cluster);
+  --font-sans: var(--font-manrope), ui-sans-serif, system-ui, -apple-system,
+    "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
 }
 
 html,
@@ -28,68 +32,120 @@ body {
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family:
-    ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, Helvetica,
-    Arial, sans-serif;
+  font-family: var(--font-sans);
 }
 
-/* --- Map markers ------------------------------------------------------- */
-/* Each pin is a round team badge: white base, league-colored ring (--ring),
-   and either a team-color abbreviation or (when enabled) a logo image. */
-.stadium-marker {
-  width: 26px;
-  height: 26px;
+/* --- Map pins ------------------------------------------------------------ */
+/* Default: a solid league-accent dot, no per-team color, no ring — legible at
+   a glance even when many pins are on screen. */
+.pin {
+  position: relative;
+  width: 15px;
+  height: 15px;
   border-radius: 9999px;
-  border: 2px solid var(--ring, #ffffff);
-  background: #ffffff;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.4);
   cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  overflow: hidden;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.18);
   transition:
-    transform 0.12s ease,
-    box-shadow 0.12s ease;
+    transform 0.15s ease-out,
+    box-shadow 0.15s ease-out;
 }
-.stadium-marker:hover {
-  transform: scale(1.25);
+.pin[data-league="MLB"] {
+  background: var(--mlb);
+}
+.pin[data-league="NFL"] {
+  background: var(--nfl);
+}
+.pin:hover {
+  transform: scale(1.15);
   z-index: 5;
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.5);
 }
-.stadium-marker__abbr {
-  display: flex;
-  width: 100%;
-  height: 100%;
-  align-items: center;
-  justify-content: center;
-  color: #ffffff;
-  font-size: 9px;
+
+/* Lightweight hover tooltip, shown before selection. */
+.pin__tip {
+  position: absolute;
+  left: 50%;
+  bottom: calc(100% + 8px);
+  transform: translateX(-50%);
+  white-space: nowrap;
+  background: oklch(20% 0.01 90);
+  color: #fff;
+  font-size: 11.5px;
   font-weight: 700;
-  letter-spacing: -0.02em;
-  line-height: 1;
+  padding: 4px 8px;
+  border-radius: 6px;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.12s ease;
 }
-.stadium-marker__logo {
+.pin:hover .pin__tip {
+  opacity: 1;
+}
+
+/* Selected: enlarged, white border, colored outer ring. */
+.pin--selected {
+  width: 20px;
+  height: 20px;
+  border: 3px solid #fff;
+  z-index: 6;
+}
+.pin--selected:hover {
+  transform: none;
+}
+.pin--selected[data-league="MLB"] {
+  box-shadow:
+    0 0 0 2px var(--mlb),
+    0 4px 10px rgba(0, 0, 0, 0.25);
+}
+.pin--selected[data-league="NFL"] {
+  box-shadow:
+    0 0 0 2px var(--nfl),
+    0 4px 10px rgba(0, 0, 0, 0.25);
+}
+.pin--selected .pin__tip {
   display: none;
-  width: 100%;
-  height: 100%;
-  object-fit: contain;
 }
-.stadium-marker.has-logo .stadium-marker__logo {
+
+/* Name label pill anchored below a selected pin (1A only — 1B shows
+   selection state in its sidebar list instead, see .pin--no-label). */
+.pin__label {
+  position: absolute;
+  left: 50%;
+  top: calc(100% + 8px);
+  transform: translateX(-50%);
+  white-space: nowrap;
+  background: oklch(20% 0.01 90);
+  color: #fff;
+  font-size: 12px;
+  font-weight: 700;
+  padding: 4px 9px;
+  border-radius: 6px;
+  display: none;
+}
+.pin--selected .pin__label {
   display: block;
 }
-.stadium-marker.has-logo .stadium-marker__abbr {
+.pin--no-label .pin__label {
   display: none;
 }
-.stadium-marker--visited {
-  box-shadow:
-    0 0 0 2px #f59e0b,
-    0 1px 3px rgba(0, 0, 0, 0.45);
+
+/* Cluster badge: 2+ co-located stadiums collapsed into one neutral dot with a
+   count, instead of overlapping circles. Breaks apart on zoom/click. */
+.pin--cluster {
+  width: 29px;
+  height: 29px;
+  background: var(--cluster);
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
-.stadium-marker--selected {
-  transform: scale(1.35);
-  z-index: 6;
-  border-color: var(--foreground);
+.pin--cluster .pin__count {
+  color: #fff;
+  font-size: 12px;
+  font-weight: 700;
+  line-height: 1;
+}
+.pin--cluster:hover {
+  transform: scale(1.08);
 }
 
 /* Mapbox popups inherit our type. */
