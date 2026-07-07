@@ -36,24 +36,27 @@ body {
 }
 
 /* --- Map pins ------------------------------------------------------------ */
-/* Default: a solid league-accent dot, no per-team color, no ring — legible at
-   a glance even when many pins are on screen. */
+/* White circle with a league-colored border containing the team logo. */
 .pin {
   position: relative;
-  width: 15px;
-  height: 15px;
+  width: 28px;
+  height: 28px;
   border-radius: 9999px;
   cursor: pointer;
+  background: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   box-shadow: 0 2px 6px rgba(0, 0, 0, 0.18);
   transition:
     transform 0.15s ease-out,
     box-shadow 0.15s ease-out;
 }
 .pin[data-league="MLB"] {
-  background: var(--mlb);
+  border: 2px solid var(--mlb);
 }
 .pin[data-league="NFL"] {
-  background: var(--nfl);
+  border: 2px solid var(--nfl);
 }
 .pin:hover {
   transform: scale(1.15);
@@ -81,25 +84,22 @@ body {
   opacity: 1;
 }
 
-/* Selected: enlarged, white border, colored outer ring. */
+/* Selected: enlarged with a thicker league-colored border. */
 .pin--selected {
-  width: 20px;
-  height: 20px;
-  border: 3px solid #fff;
+  width: 36px;
+  height: 36px;
   z-index: 6;
 }
 .pin--selected:hover {
   transform: none;
 }
 .pin--selected[data-league="MLB"] {
-  box-shadow:
-    0 0 0 2px var(--mlb),
-    0 4px 10px rgba(0, 0, 0, 0.25);
+  border: 3px solid var(--mlb);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
 }
 .pin--selected[data-league="NFL"] {
-  box-shadow:
-    0 0 0 2px var(--nfl),
-    0 4px 10px rgba(0, 0, 0, 0.25);
+  border: 3px solid var(--nfl);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
 }
 .pin--selected .pin__tip {
   display: none;
