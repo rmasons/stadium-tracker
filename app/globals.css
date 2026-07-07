@@ -44,32 +44,33 @@ body {
 .pin {
   position: relative;
   width: 40px;
-  height: 68px;
+  height: 52px;
   cursor: pointer;
   transform-origin: bottom center;
   transition: transform 0.15s ease-out, filter 0.15s ease-out;
   filter: drop-shadow(0 3px 8px rgba(0, 0, 0, 0.25));
 }
 
-/* Solid-color teardrop body via clip-path. Longer tail (68px vs 54px) and
-   tighter control points (y=62, only 4px above the tip) give a much more
-   pronounced taper — tip angle drops to ~26°. */
+/* Classic map-pin silhouette: straight sides run from the tip to the
+   geometric tangent points on the circle (≈6,27 and 34,27), then arc
+   over the top with sweep=1 (clockwise in screen coords = upper arc).
+   True tangent lines mean the join is smooth and sides converge steadily. */
 .pin__body {
   position: absolute;
   inset: 0;
-  clip-path: path('M 20 66 Q 3 62 3 18 A 17 17 0 0 1 37 18 Q 37 62 20 66 Z');
+  clip-path: path('M 20 50 L 5.6 27 A 17 17 0 1 1 34.4 27 Z');
 }
 .pin[data-league="MLB"] .pin__body { background: var(--mlb); }
 .pin[data-league="NFL"] .pin__body { background: var(--nfl); }
 
-/* White circle inside the teardrop — inset 4px from the arc edge.
-   Arc radius 17, head radius 13 → center stays at (20,18). */
+/* White circle inside the teardrop — 1px inset from the arc edge.
+   Arc radius 17, head radius 16 → center stays at (20,18). */
 .pin__head {
   position: absolute;
-  width: 26px;
-  height: 26px;
-  top: 5px;   /* 18 - 13 */
-  left: 7px;  /* 20 - 13 */
+  width: 32px;
+  height: 32px;
+  top: 2px;   /* 18 - 16 */
+  left: 4px;  /* 20 - 16 */
   border-radius: 9999px;
   background: #fff;
   display: flex;
@@ -79,8 +80,8 @@ body {
 
 /* Team logo. */
 .pin__logo {
-  width: 18px;
-  height: 18px;
+  width: 24px;
+  height: 24px;
   object-fit: contain;
   display: block;
 }
