@@ -306,7 +306,7 @@ export function StadiumMap({
       const zoom = map.getZoom();
       map.easeTo({
         center: [stadium.lng, stadium.lat],
-        zoom: zoom < CLUSTER_MAX_ZOOM ? CLUSTER_MAX_ZOOM + 1.2 : zoom,
+        zoom: Math.max(zoom, 11),
         padding: DETAIL_PANEL_CLEARANCE,
         duration: 600,
       });
