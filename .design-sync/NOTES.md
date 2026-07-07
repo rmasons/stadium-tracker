@@ -76,3 +76,9 @@ a stale copy silently ships outdated styling with no build error.
   the config's `componentSrcMap` path together.
 - No Storybook, so every preview is authored from scratch (no reference
   render to diff against) — grades are absolute-rubric, not comparative.
+- **Token system expanded.** `app/globals.css` now has a dark-default token
+  palette (`--surface`, `--selected`, `--ink-medium` added; all components
+  switched from literal `oklch()` to `var(--token)`). Before a re-sync, run
+  the CSS copy step below so the compiled chunk includes the updated token
+  values and dark-mode overrides. The `--mlb:` grep still finds the right
+  chunk.
