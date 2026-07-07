@@ -10,10 +10,12 @@ each visit, and share a public map of your trackers with friends.
   the fan-out uses per-league offsets when a single league is filtered so
   same-league co-located pairs (Giants/Jets, Rams/Chargers, Cubs/Sox) stay
   separated. The map defaults to **dark mode** and follows the system
-  light/dark preference.
+  light/dark preference. **Visited stadiums** render at full opacity;
+  unvisited ones dim to 55% so your progress reads at a glance.
 - **Google sign-in** via Firebase Auth.
-- Click a pin → **log a visit** (date + opponent). Been more than once?
-  **Log repeat visits** — each is its own record.
+- Click a pin → **detail panel** with a real **stadium photo** (Wikimedia
+  Commons), the team logo as fallback, plus an **"I've been here"** button to
+  **log a visit** (date + opponent). Been more than once? **Log repeat visits** — each is its own record.
 - **My Tracker** — a sortable list, **completion progress bar**, and per-league
   counts.
 - **Share URL** — every user gets a public read-only page at `/u/[username]`,
