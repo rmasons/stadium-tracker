@@ -5,6 +5,7 @@ import "mapbox-gl/dist/mapbox-gl.css";
 import type { Map as MapboxMap } from "mapbox-gl";
 import { STADIUMS } from "@/lib/stadiums";
 import { computePinOffsets, metroGroups, centroid } from "@/lib/pins";
+import { getLogoUrl } from "@/lib/logos";
 import type { League, Stadium } from "@/lib/types";
 
 const MAPBOX_TOKEN = process.env.NEXT_PUBLIC_MAPBOX_TOKEN;
@@ -178,6 +179,17 @@ export function StadiumMap({
         el.className = "pin";
         el.dataset.league = stadium.league;
         el.title = `${stadium.team} — ${stadium.name}`;
+
+        const logoUrl = getLogoUrl(stadium.id);
+        if (logoUrl) {
+          const img = document.createElement("img");
+          img.src = logoUrl;
+          img.alt = "";
+          img.setAttribute("aria-hidden", "true");
+          img.style.cssText =
+            "width:74%;height:74%;object-fit:contain;pointer-events:none;position:relative;z-index:1;";
+          el.appendChild(img);
+        }
 
         const tip = document.createElement("span");
         tip.className = "pin__tip";

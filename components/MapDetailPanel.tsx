@@ -2,6 +2,7 @@
 
 import { useState, type CSSProperties } from "react";
 import { StadiumDetail } from "./StadiumDetail";
+import { getLogoUrl } from "@/lib/logos";
 import type { Stadium, Visit } from "@/lib/types";
 
 interface Props {
@@ -103,6 +104,7 @@ function PanelBody({
 
   const ordered = [...visits].sort((a, b) => b.createdAt - a.createdAt);
   const latest = ordered[0] as Visit | undefined;
+  const logoUrl = getLogoUrl(stadium.id);
 
   let meta: string;
   if (latest) {
@@ -144,16 +146,26 @@ function PanelBody({
       >
         ✕
       </button>
-      <div
-        style={{
-          width: 64,
-          height: 64,
-          borderRadius: 12,
-          flexShrink: 0,
-          background:
-            "repeating-linear-gradient(45deg, oklch(93% 0.005 95), oklch(93% 0.005 95) 6px, oklch(96% 0.004 95) 6px, oklch(96% 0.004 95) 12px)",
-        }}
-      />
+      {logoUrl ? (
+        // eslint-disable-next-line @next/next/no-img-element
+        <img
+          src={logoUrl}
+          alt=""
+          aria-hidden
+          style={{ width: 64, height: 64, objectFit: "contain", padding: 6, flexShrink: 0 }}
+        />
+      ) : (
+        <div
+          style={{
+            width: 64,
+            height: 64,
+            borderRadius: 12,
+            flexShrink: 0,
+            background:
+              "repeating-linear-gradient(45deg, oklch(93% 0.005 95), oklch(93% 0.005 95) 6px, oklch(96% 0.004 95) 6px, oklch(96% 0.004 95) 12px)",
+          }}
+        />
+      )}
       <div style={{ flex: 1, minWidth: 0 }}>
         <div style={{ fontWeight: 800, fontSize: 16, color: "oklch(18% 0.01 90)" }}>
           {stadium.name}{" "}
