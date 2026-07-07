@@ -2,7 +2,7 @@
 
 import { useEffect, useRef } from "react";
 import "mapbox-gl/dist/mapbox-gl.css";
-import type { Map as MapboxMap } from "mapbox-gl";
+import type { Map as MapboxMap, Marker as MapboxMarker } from "mapbox-gl";
 import { STADIUMS } from "@/lib/stadiums";
 import { getLogoUrl } from "@/lib/logos";
 import { computePinOffsets, metroGroups, centroid } from "@/lib/pins";
@@ -75,6 +75,7 @@ export function StadiumMap({
   const containerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<MapboxMap | null>(null);
   const markersRef = useRef<Record<string, HTMLElement>>({});
+  const markerInstancesRef = useRef<Record<string, MapboxMarker>>({});
   const clusterMarkersRef = useRef<Record<string, HTMLElement>>({});
   // Latest callback/prop values without re-running the (expensive) init effect.
   const onSelectRef = useRef(onSelect);
@@ -138,9 +139,9 @@ export function StadiumMap({
       if (cancelled || !containerRef.current) return;
 
       mapboxgl.accessToken = MAPBOX_TOKEN;
-      const mq = window.matchMedia("(prefers-color-scheme: dark)");
-      const mapStyle = (dark: boolean) =>
-        dark ? "mapbox://styles/mapbox/dark-v11" : "mapbox://styles/mapbox/light-v11";
+      const mq = window.matchMedia("(prefers-color-scheme: light)");
+      const mapStyle = (light: boolean) =>
+        light ? "mapbox://styles/mapbox/light-v11" : "mapbox://styles/mapbox/dark-v11";
       map = new mapboxgl.Map({
         container: containerRef.current,
         style: mapStyle(mq.matches),
@@ -222,10 +223,11 @@ export function StadiumMap({
 
         const [dx, dy] = PIN_OFFSETS.get(stadium.id) ?? [0, 0];
         // anchor:'bottom' puts the tail tip at the lat/lng coordinate.
-        new mapboxgl.Marker({ element: el, anchor: "bottom", offset: [dx, dy] })
+        const marker = new mapboxgl.Marker({ element: el, anchor: "bottom", offset: [dx, dy] })
           .setLngLat([stadium.lng, stadium.lat])
           .addTo(map);
         markersRef.current[stadium.id] = el;
+        markerInstancesRef.current[stadium.id] = marker;
       }
 
       for (const group of METRO_GROUPS) {
@@ -258,6 +260,7 @@ export function StadiumMap({
       const onThemeChange = (e: MediaQueryListEvent) => {
         map?.setStyle(mapStyle(e.matches));
       };
+
       mq.addEventListener("change", onThemeChange);
       mqCleanup = () => mq.removeEventListener("change", onThemeChange);
     })();
@@ -267,6 +270,7 @@ export function StadiumMap({
       resizeObserver?.disconnect();
       mqCleanup?.();
       markersRef.current = {};
+      markerInstancesRef.current = {};
       clusterMarkersRef.current = {};
       if (map) map.remove();
       mapRef.current = null;
@@ -276,10 +280,18 @@ export function StadiumMap({
 
   // Reflect selection + the league filter onto markers and cluster badges.
   useEffect(() => {
+    const useOffsets = leagueFilter === "ALL";
     for (const stadium of STADIUMS) {
       const el = markersRef.current[stadium.id];
       if (!el) continue;
       el.classList.toggle("pin--selected", selectedId === stadium.id);
+      // Remove metro offsets when a single league is active so pins land
+      // exactly over their stadiums instead of fanned out for mixed-league groups.
+      const marker = markerInstancesRef.current[stadium.id];
+      if (marker) {
+        const [dx, dy] = useOffsets ? (PIN_OFFSETS.get(stadium.id) ?? [0, 0]) : [0, 0];
+        marker.setOffset([dx, dy]);
+      }
     }
     refreshClusters.current();
   }, [selectedId, leagueFilter]);
