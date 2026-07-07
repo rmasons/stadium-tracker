@@ -11,6 +11,7 @@ interface Props {
   onClose: () => void;
   onAdd: (input: { date: string; opponent: string }) => Promise<void>;
   onRemove: (visitId: string) => Promise<void>;
+  onUpdate: (visitId: string, input: { date: string; opponent: string }) => Promise<void>;
   emptyHint?: string;
 }
 
@@ -36,6 +37,7 @@ export function MapDetailPanel({
   onClose,
   onAdd,
   onRemove,
+  onUpdate,
   emptyHint = "Click a pin to see the stadium.",
 }: Props) {
   // Keyed on the stadium so `editing` resets whenever the selection changes.
@@ -48,6 +50,7 @@ export function MapDetailPanel({
       onClose={onClose}
       onAdd={onAdd}
       onRemove={onRemove}
+      onUpdate={onUpdate}
       emptyHint={emptyHint}
     />
   );
@@ -60,6 +63,7 @@ function PanelBody({
   onClose,
   onAdd,
   onRemove,
+  onUpdate,
   emptyHint,
 }: Props & { emptyHint: string }) {
   const [editing, setEditing] = useState(false);
@@ -91,6 +95,7 @@ function PanelBody({
           onClose={() => setEditing(false)}
           onAdd={onAdd}
           onRemove={onRemove}
+          onUpdate={onUpdate}
         />
       </div>
     );

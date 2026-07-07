@@ -26,6 +26,7 @@ interface Props {
   canEdit: boolean;
   onAdd: (input: { date: string; opponent: string }) => Promise<void>;
   onRemove: (visitId: string) => Promise<void>;
+  onUpdate: (visitId: string, input: { date: string; opponent: string }) => Promise<void>;
 }
 
 /** Option 1B — sidebar + map split (see design_handoff_redesign). */
@@ -40,6 +41,7 @@ export function LayoutB({
   canEdit,
   onAdd,
   onRemove,
+  onUpdate,
 }: Props) {
   const mapRef = useRef<MapboxMap | null>(null);
   const [zoomedIn, setZoomedIn] = useState(false);
@@ -127,6 +129,7 @@ export function LayoutB({
             onClose={() => onSelect(null)}
             onAdd={onAdd}
             onRemove={onRemove}
+            onUpdate={onUpdate}
             emptyHint="Select a stadium to see its details."
           />
         </div>
