@@ -2,10 +2,10 @@
 
 import { useEffect, useRef } from "react";
 import "mapbox-gl/dist/mapbox-gl.css";
-import type { Map as MapboxMap } from "mapbox-gl";
+import type { Map as MapboxMap, Marker as MapboxMarker } from "mapbox-gl";
 import { STADIUMS } from "@/lib/stadiums";
-import { computePinOffsets, metroGroups, centroid } from "@/lib/pins";
 import { getLogoUrl } from "@/lib/logos";
+import { computePinOffsets, metroGroups, centroid } from "@/lib/pins";
 import type { League, Stadium } from "@/lib/types";
 
 const MAPBOX_TOKEN = process.env.NEXT_PUBLIC_MAPBOX_TOKEN;
@@ -48,7 +48,10 @@ export const BOUNDS_FIT_PADDING = 24;
 const DETAIL_PANEL_CLEARANCE = { top: 0, bottom: 160, left: 0, right: 0 };
 
 // Constant screen-pixel offsets that fan co-located pins apart (computed once).
+// Per-league maps ensure same-league pairs stay separated when a filter is active.
 const PIN_OFFSETS = computePinOffsets();
+const MLB_OFFSETS = computePinOffsets({ stadiums: STADIUMS.filter((s) => s.league === "MLB") });
+const NFL_OFFSETS = computePinOffsets({ stadiums: STADIUMS.filter((s) => s.league === "NFL") });
 // Metro groups of 2+ stadiums that are candidates for a cluster badge.
 const METRO_GROUPS = metroGroups();
 
@@ -75,6 +78,7 @@ export function StadiumMap({
   const containerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<MapboxMap | null>(null);
   const markersRef = useRef<Record<string, HTMLElement>>({});
+  const markerInstancesRef = useRef<Record<string, MapboxMarker>>({});
   const clusterMarkersRef = useRef<Record<string, HTMLElement>>({});
   // Latest callback/prop values without re-running the (expensive) init effect.
   const onSelectRef = useRef(onSelect);
@@ -131,15 +135,19 @@ export function StadiumMap({
     let cancelled = false;
     let map: MapboxMap | undefined;
     let resizeObserver: ResizeObserver | undefined;
+    let mqCleanup: (() => void) | undefined;
 
     void (async () => {
       const mapboxgl = (await import("mapbox-gl")).default;
       if (cancelled || !containerRef.current) return;
 
       mapboxgl.accessToken = MAPBOX_TOKEN;
+      const mq = window.matchMedia("(prefers-color-scheme: light)");
+      const mapStyle = (light: boolean) =>
+        light ? "mapbox://styles/mapbox/light-v11" : "mapbox://styles/mapbox/dark-v11";
       map = new mapboxgl.Map({
         container: containerRef.current,
-        style: "mapbox://styles/mapbox/light-v11",
+        style: mapStyle(mq.matches),
         center: INITIAL_CENTER,
         zoom: INITIAL_ZOOM,
         minZoom: 2,
@@ -180,16 +188,24 @@ export function StadiumMap({
         el.dataset.league = stadium.league;
         el.title = `${stadium.team} — ${stadium.name}`;
 
+        // Teardrop body — carries the clip-path and league color.
+        // Kept separate from .pin so tooltip/label sit outside the clip boundary.
+        const body = document.createElement("div");
+        body.className = "pin__body";
+
+        // White circle inside the body, holds the team logo.
+        const head = document.createElement("div");
+        head.className = "pin__head";
         const logoUrl = getLogoUrl(stadium.id);
         if (logoUrl) {
           const img = document.createElement("img");
           img.src = logoUrl;
           img.alt = "";
-          img.setAttribute("aria-hidden", "true");
-          img.style.cssText =
-            "width:74%;height:74%;object-fit:contain;pointer-events:none;position:relative;z-index:1;";
-          el.appendChild(img);
+          img.className = "pin__logo";
+          head.appendChild(img);
         }
+        body.appendChild(head);
+        el.appendChild(body);
 
         const tip = document.createElement("span");
         tip.className = "pin__tip";
@@ -209,10 +225,12 @@ export function StadiumMap({
         });
 
         const [dx, dy] = PIN_OFFSETS.get(stadium.id) ?? [0, 0];
-        new mapboxgl.Marker({ element: el, offset: [dx, dy] })
+        // anchor:'bottom' puts the tail tip at the lat/lng coordinate.
+        const marker = new mapboxgl.Marker({ element: el, anchor: "bottom", offset: [dx, dy] })
           .setLngLat([stadium.lng, stadium.lat])
           .addTo(map);
         markersRef.current[stadium.id] = el;
+        markerInstancesRef.current[stadium.id] = marker;
       }
 
       for (const group of METRO_GROUPS) {
@@ -241,12 +259,21 @@ export function StadiumMap({
 
       refreshClusters.current();
       map.on("zoom", refreshClusters.current);
+
+      const onThemeChange = (e: MediaQueryListEvent) => {
+        map?.setStyle(mapStyle(e.matches));
+      };
+
+      mq.addEventListener("change", onThemeChange);
+      mqCleanup = () => mq.removeEventListener("change", onThemeChange);
     })();
 
     return () => {
       cancelled = true;
       resizeObserver?.disconnect();
+      mqCleanup?.();
       markersRef.current = {};
+      markerInstancesRef.current = {};
       clusterMarkersRef.current = {};
       if (map) map.remove();
       mapRef.current = null;
@@ -256,10 +283,29 @@ export function StadiumMap({
 
   // Reflect selection + the league filter onto markers and cluster badges.
   useEffect(() => {
+    // Pick the offset map for the active filter: per-league maps keep same-league
+    // co-located pairs (e.g. Giants/Jets, Rams/Chargers) separated; the all-league
+    // map fans mixed-league metro groups apart.
+    const offsetMap =
+      leagueFilter === "MLB" ? MLB_OFFSETS
+      : leagueFilter === "NFL" ? NFL_OFFSETS
+      : PIN_OFFSETS;
+
     for (const stadium of STADIUMS) {
       const el = markersRef.current[stadium.id];
       if (!el) continue;
       el.classList.toggle("pin--selected", selectedId === stadium.id);
+
+      const marker = markerInstancesRef.current[stadium.id];
+      if (marker) {
+        const base = PIN_OFFSETS.get(stadium.id) ?? [0, 0];
+        // Skip isolated stadiums: their offset is [0,0] in every map, so the
+        // call is always a no-op and can be elided entirely.
+        if (base[0] !== 0 || base[1] !== 0) {
+          const [dx, dy] = offsetMap.get(stadium.id) ?? [0, 0];
+          marker.setOffset([dx, dy]);
+        }
+      }
     }
     refreshClusters.current();
   }, [selectedId, leagueFilter]);
@@ -274,7 +320,7 @@ export function StadiumMap({
       const zoom = map.getZoom();
       map.easeTo({
         center: [stadium.lng, stadium.lat],
-        zoom: zoom < CLUSTER_MAX_ZOOM ? CLUSTER_MAX_ZOOM + 1.2 : zoom,
+        zoom: Math.max(zoom, 11),
         padding: DETAIL_PANEL_CLEARANCE,
         duration: 600,
       });

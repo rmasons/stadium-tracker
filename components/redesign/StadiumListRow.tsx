@@ -24,7 +24,7 @@ export function StadiumListRow({
         gap: 10,
         padding: "9px 10px",
         borderRadius: 10,
-        background: selected ? "oklch(97% 0.008 250)" : "transparent",
+        background: selected ? "var(--selected)" : "transparent",
         opacity: visited ? 1 : 0.4,
         border: "none",
         textAlign: "left",
@@ -56,7 +56,7 @@ export function StadiumListRow({
           style={{
             fontSize: 13.5,
             fontWeight: 700,
-            color: "oklch(20% 0.01 90)",
+            color: "var(--foreground)",
             overflow: "hidden",
             textOverflow: "ellipsis",
             whiteSpace: "nowrap",
@@ -67,7 +67,7 @@ export function StadiumListRow({
         <div
           style={{
             fontSize: 11.5,
-            color: "oklch(50% 0.01 90)",
+            color: "var(--muted)",
             overflow: "hidden",
             textOverflow: "ellipsis",
             whiteSpace: "nowrap",

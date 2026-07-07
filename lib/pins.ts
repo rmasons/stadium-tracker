@@ -59,6 +59,10 @@ export interface PinOffsetOptions {
   thresholdKm?: number;
   /** Radius (px) of the ring the fanned pins are placed on. */
   radiusPx?: number;
+  /** Stadium list to group; defaults to all STADIUMS. Pass a league-filtered
+   *  subset so same-league co-located pairs keep their offsets when a league
+   *  filter is active. */
+  stadiums?: Stadium[];
 }
 
 /**
@@ -71,9 +75,10 @@ export function computePinOffsets(
 ): Map<string, [number, number]> {
   const thresholdKm = opts.thresholdKm ?? 30;
   const radiusPx = opts.radiusPx ?? 13;
+  const stadiums = opts.stadiums ?? STADIUMS;
   const result = new Map<string, [number, number]>();
 
-  for (const group of groupStadiums(STADIUMS, thresholdKm)) {
+  for (const group of groupStadiums(stadiums, thresholdKm)) {
     if (group.length === 1) {
       result.set(group[0].id, [0, 0]);
       continue;

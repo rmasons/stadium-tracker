@@ -19,8 +19,8 @@ export function SignInButton({ fullWidth = false }: { fullWidth?: boolean }) {
       style={{
         width: fullWidth ? "100%" : undefined,
         background: "transparent",
-        border: "1.5px solid oklch(80% 0.01 90)",
-        color: "oklch(25% 0.01 90)",
+        border: "1.5px solid var(--border)",
+        color: "var(--ink-medium)",
         fontWeight: 700,
         fontSize: 14,
         padding: "9px 16px",
@@ -30,7 +30,7 @@ export function SignInButton({ fullWidth = false }: { fullWidth?: boolean }) {
         transition: "background 0.12s ease",
       }}
       onMouseEnter={(e) => {
-        if (configured) e.currentTarget.style.background = "oklch(97% 0.006 95)";
+        if (configured) e.currentTarget.style.background = "var(--surface)";
       }}
       onMouseLeave={(e) => {
         e.currentTarget.style.background = "transparent";
