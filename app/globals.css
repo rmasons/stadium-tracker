@@ -147,11 +147,13 @@ body {
   display: none;
 }
 
-/* Name label pill (1A layout only — 1B uses sidebar highlight instead). */
+/* Name label pill (1A layout only — 1B uses sidebar highlight instead).
+   Anchored above the pin (not below) so it doesn't fall beneath the
+   geographic coordinate, which sits at the bottom of the element. */
 .pin__label {
   position: absolute;
   left: 50%;
-  top: calc(100% + 6px);
+  bottom: calc(100% + 6px);
   transform: translateX(-50%);
   white-space: nowrap;
   background: var(--foreground);

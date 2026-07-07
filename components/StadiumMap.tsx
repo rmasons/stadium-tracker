@@ -48,7 +48,10 @@ export const BOUNDS_FIT_PADDING = 24;
 const DETAIL_PANEL_CLEARANCE = { top: 0, bottom: 160, left: 0, right: 0 };
 
 // Constant screen-pixel offsets that fan co-located pins apart (computed once).
+// Per-league maps ensure same-league pairs stay separated when a filter is active.
 const PIN_OFFSETS = computePinOffsets();
+const MLB_OFFSETS = computePinOffsets({ stadiums: STADIUMS.filter((s) => s.league === "MLB") });
+const NFL_OFFSETS = computePinOffsets({ stadiums: STADIUMS.filter((s) => s.league === "NFL") });
 // Metro groups of 2+ stadiums that are candidates for a cluster badge.
 const METRO_GROUPS = metroGroups();
 
@@ -280,17 +283,28 @@ export function StadiumMap({
 
   // Reflect selection + the league filter onto markers and cluster badges.
   useEffect(() => {
-    const useOffsets = leagueFilter === "ALL";
+    // Pick the offset map for the active filter: per-league maps keep same-league
+    // co-located pairs (e.g. Giants/Jets, Rams/Chargers) separated; the all-league
+    // map fans mixed-league metro groups apart.
+    const offsetMap =
+      leagueFilter === "MLB" ? MLB_OFFSETS
+      : leagueFilter === "NFL" ? NFL_OFFSETS
+      : PIN_OFFSETS;
+
     for (const stadium of STADIUMS) {
       const el = markersRef.current[stadium.id];
       if (!el) continue;
       el.classList.toggle("pin--selected", selectedId === stadium.id);
-      // Remove metro offsets when a single league is active so pins land
-      // exactly over their stadiums instead of fanned out for mixed-league groups.
+
       const marker = markerInstancesRef.current[stadium.id];
       if (marker) {
-        const [dx, dy] = useOffsets ? (PIN_OFFSETS.get(stadium.id) ?? [0, 0]) : [0, 0];
-        marker.setOffset([dx, dy]);
+        const base = PIN_OFFSETS.get(stadium.id) ?? [0, 0];
+        // Skip isolated stadiums: their offset is [0,0] in every map, so the
+        // call is always a no-op and can be elided entirely.
+        if (base[0] !== 0 || base[1] !== 0) {
+          const [dx, dy] = offsetMap.get(stadium.id) ?? [0, 0];
+          marker.setOffset([dx, dy]);
+        }
       }
     }
     refreshClusters.current();
