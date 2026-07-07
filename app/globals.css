@@ -44,20 +44,20 @@ body {
 .pin {
   position: relative;
   width: 40px;
-  height: 54px;
+  height: 68px;
   cursor: pointer;
   transform-origin: bottom center;
   transition: transform 0.15s ease-out, filter 0.15s ease-out;
   filter: drop-shadow(0 3px 8px rgba(0, 0, 0, 0.25));
 }
 
-/* Solid-color teardrop body via clip-path. The path describes a smooth
-   curve from the tip (20,53) up both sides to the circle tangent points
-   (3,18) and (37,18), then an arc over the top. */
+/* Solid-color teardrop body via clip-path. Longer tail (68px vs 54px) and
+   tighter control points (y=62, only 4px above the tip) give a much more
+   pronounced taper — tip angle drops to ~26°. */
 .pin__body {
   position: absolute;
   inset: 0;
-  clip-path: path('M 20 53 Q 3 47 3 18 A 17 17 0 0 1 37 18 Q 37 47 20 53 Z');
+  clip-path: path('M 20 66 Q 3 62 3 18 A 17 17 0 0 1 37 18 Q 37 62 20 66 Z');
 }
 .pin[data-league="MLB"] .pin__body { background: var(--mlb); }
 .pin[data-league="NFL"] .pin__body { background: var(--nfl); }
