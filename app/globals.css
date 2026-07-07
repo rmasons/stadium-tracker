@@ -36,11 +36,11 @@ body {
 }
 
 /* --- Map pins ------------------------------------------------------------ */
-/* White circle with a league-colored border containing the team logo. */
+/* White circle with a league-colored border. */
 .pin {
   position: relative;
-  width: 28px;
-  height: 28px;
+  width: 20px;
+  height: 20px;
   border-radius: 9999px;
   cursor: pointer;
   background: #fff;
@@ -86,8 +86,8 @@ body {
 
 /* Selected: enlarged with a thicker league-colored border. */
 .pin--selected {
-  width: 36px;
-  height: 36px;
+  width: 28px;
+  height: 28px;
   z-index: 6;
 }
 .pin--selected:hover {
