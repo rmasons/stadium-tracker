@@ -39,13 +39,40 @@ service cloud.firestore {
           && request.resource.data.stadiumId.size() > 0
           && request.resource.data.league in ['MLB', 'NFL']
           && request.resource.data.date is string
-          && request.resource.data.opponent is string;
+          && request.resource.data.opponent is string
+          // buddyIds/friendUids are optional (older clients may omit them)
+          // but capped so a malicious client can't stuff megabytes of ids
+          // into this world-readable doc.
+          && (!('buddyIds' in request.resource.data)
+              || (request.resource.data.buddyIds is list
+                  && request.resource.data.buddyIds.size() <= 25))
+          && (!('friendUids' in request.resource.data)
+              || (request.resource.data.friendUids is list
+                  && request.resource.data.friendUids.size() <= 25));
         // Updates may not move a visit to a different stadium.
         allow update: if isOwner(uid)
           && request.resource.data.stadiumId == resource.data.stadiumId
           && request.resource.data.date is string
-          && request.resource.data.opponent is string;
+          && request.resource.data.opponent is string
+          && (!('buddyIds' in request.resource.data)
+              || (request.resource.data.buddyIds is list
+                  && request.resource.data.buddyIds.size() <= 25))
+          && (!('friendUids' in request.resource.data)
+              || (request.resource.data.friendUids is list
+                  && request.resource.data.friendUids.size() <= 25));
         allow delete: if isOwner(uid);
+      }
+
+      // Buddies: named companions, strictly private to the owner (no world
+      // read — buddy names are personal data, unlike the public profile).
+      match /buddies/{buddyId} {
+        allow read, delete: if isOwner(uid);
+        allow create, update: if isOwner(uid)
+          && request.resource.data.keys().hasOnly(['name', 'createdAt'])
+          && request.resource.data.name is string
+          && request.resource.data.name.size() >= 1
+          && request.resource.data.name.size() <= 50
+          && request.resource.data.createdAt is number;
       }
     }
 

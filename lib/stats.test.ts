@@ -24,6 +24,8 @@ function visit(
     opponent: opts.opponent ?? "",
     createdAt: 0,
     updatedAt: 0,
+    buddyIds: [],
+    friendUids: [],
   };
 }
 

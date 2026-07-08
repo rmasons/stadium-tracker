@@ -2,7 +2,15 @@
 
 import { useMemo, useState } from "react";
 import { LEAGUE_COLORS, opponentsFor } from "@/lib/stadiums";
-import type { Stadium, Visit } from "@/lib/types";
+import { AttendeePicker } from "./AttendeePicker";
+import type { Buddy, FriendProfile, Stadium, Visit } from "@/lib/types";
+
+interface VisitInput {
+  date: string;
+  opponent: string;
+  buddyIds: string[];
+  friendUids: string[];
+}
 
 interface Props {
   stadium: Stadium;
@@ -10,16 +18,40 @@ interface Props {
   visits: Visit[];
   /** True when the viewer is signed in and can edit their own visits. */
   canEdit: boolean;
+  /** The viewer's buddies, for the attendee picker and resolving visit rows. */
+  buddies: Buddy[];
+  /** The viewer's accepted friends, for the attendee picker and resolving
+   *  visit rows. */
+  friends: FriendProfile[];
   onClose: () => void;
-  onAdd: (input: { date: string; opponent: string }) => Promise<void>;
+  onAdd: (input: VisitInput) => Promise<void>;
   onRemove: (visitId: string) => Promise<void>;
-  onUpdate: (visitId: string, input: { date: string; opponent: string }) => Promise<void>;
+  onUpdate: (visitId: string, input: VisitInput) => Promise<void>;
+}
+
+/** Resolve a visit's buddyIds/friendUids to display names, silently
+ *  dropping ids that no longer resolve (deleted buddy, unfriended user). */
+function attendeeNames(
+  visit: Visit,
+  buddies: Buddy[],
+  friends: FriendProfile[],
+): string[] {
+  const buddyNames = visit.buddyIds
+    .map((id) => buddies.find((b) => b.id === id)?.name)
+    .filter((name): name is string => !!name);
+  const friendNames = visit.friendUids
+    .map((uid) => friends.find((f) => f.uid === uid))
+    .filter((f): f is FriendProfile => !!f)
+    .map((f) => f.displayName || f.username);
+  return [...buddyNames, ...friendNames];
 }
 
 export function StadiumDetail({
   stadium,
   visits,
   canEdit,
+  buddies,
+  friends,
   onClose,
   onAdd,
   onRemove,
@@ -27,6 +59,8 @@ export function StadiumDetail({
 }: Props) {
   const [date, setDate] = useState("");
   const [opponent, setOpponent] = useState("");
+  const [selectedBuddyIds, setSelectedBuddyIds] = useState<string[]>([]);
+  const [selectedFriendUids, setSelectedFriendUids] = useState<string[]>([]);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -34,6 +68,8 @@ export function StadiumDetail({
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editDate, setEditDate] = useState("");
   const [editOpponent, setEditOpponent] = useState("");
+  const [editBuddyIds, setEditBuddyIds] = useState<string[]>([]);
+  const [editFriendUids, setEditFriendUids] = useState<string[]>([]);
 
   const opponents = useMemo(() => opponentsFor(stadium), [stadium]);
 
@@ -44,6 +80,8 @@ export function StadiumDetail({
     setEditingId(v.id);
     setEditDate(v.date);
     setEditOpponent(v.opponent);
+    setEditBuddyIds(v.buddyIds);
+    setEditFriendUids(v.friendUids);
     setError(null);
   }
 
@@ -55,9 +93,16 @@ export function StadiumDetail({
     setBusy(true);
     setError(null);
     try {
-      await onAdd({ date, opponent });
+      await onAdd({
+        date,
+        opponent,
+        buddyIds: selectedBuddyIds,
+        friendUids: selectedFriendUids,
+      });
       setDate("");
       setOpponent("");
+      setSelectedBuddyIds([]);
+      setSelectedFriendUids([]);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Something went wrong.");
     } finally {
@@ -69,7 +114,12 @@ export function StadiumDetail({
     setBusy(true);
     setError(null);
     try {
-      await onUpdate(visitId, { date: editDate, opponent: editOpponent });
+      await onUpdate(visitId, {
+        date: editDate,
+        opponent: editOpponent,
+        buddyIds: editBuddyIds,
+        friendUids: editFriendUids,
+      });
       setEditingId(null);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Something went wrong.");
@@ -155,6 +205,16 @@ export function StadiumDetail({
                         ))}
                       </select>
                     </div>
+                    <AttendeePicker
+                      buddies={buddies}
+                      friends={friends}
+                      selectedBuddyIds={editBuddyIds}
+                      selectedFriendUids={editFriendUids}
+                      onChange={(buddyIds, friendUids) => {
+                        setEditBuddyIds(buddyIds);
+                        setEditFriendUids(friendUids);
+                      }}
+                    />
                     <div className="flex justify-end gap-2">
                       <button
                         onClick={cancelEdit}
@@ -178,12 +238,24 @@ export function StadiumDetail({
                     key={v.id}
                     className="flex items-center justify-between rounded-md bg-background px-3 py-2 text-sm"
                   >
-                    <span>
-                      {v.date || "Date unknown"}
-                      {v.opponent && (
-                        <span className="text-muted"> · vs {v.opponent}</span>
-                      )}
-                    </span>
+                    <div className="min-w-0">
+                      <span>
+                        {v.date || "Date unknown"}
+                        {v.opponent && (
+                          <span className="text-muted"> · vs {v.opponent}</span>
+                        )}
+                      </span>
+                      {(() => {
+                        const names = attendeeNames(v, buddies, friends);
+                        return (
+                          names.length > 0 && (
+                            <p className="mt-0.5 text-xs text-muted">
+                              With {names.join(", ")}
+                            </p>
+                          )
+                        );
+                      })()}
+                    </div>
                     {canEdit && (
                       <div className="ml-2 flex items-center gap-1">
                         <button
@@ -241,6 +313,17 @@ export function StadiumDetail({
                 ))}
               </select>
             </label>
+
+            <AttendeePicker
+              buddies={buddies}
+              friends={friends}
+              selectedBuddyIds={selectedBuddyIds}
+              selectedFriendUids={selectedFriendUids}
+              onChange={(buddyIds, friendUids) => {
+                setSelectedBuddyIds(buddyIds);
+                setSelectedFriendUids(friendUids);
+              }}
+            />
 
             {error && <p className="text-sm text-nfl">{error}</p>}
 

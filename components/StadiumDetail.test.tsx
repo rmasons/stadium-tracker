@@ -25,6 +25,8 @@ function visit(id: string, date: string, opponent = "", createdAt = 0): Visit {
     opponent,
     createdAt,
     updatedAt: createdAt,
+    buddyIds: [],
+    friendUids: [],
   };
 }
 
@@ -39,6 +41,8 @@ describe("StadiumDetail", () => {
         stadium={stadium}
         visits={[]}
         canEdit={false}
+        buddies={[]}
+        friends={[]}
         onClose={vi.fn()}
         onAdd={noop}
         onRemove={noop}
@@ -60,6 +64,8 @@ describe("StadiumDetail", () => {
           visit("b", "2023-08-12", "Orioles", 1),
         ]}
         canEdit={false}
+        buddies={[]}
+        friends={[]}
         onClose={vi.fn()}
         onAdd={noop}
         onRemove={noop}
@@ -77,6 +83,8 @@ describe("StadiumDetail", () => {
         stadium={stadium}
         visits={[]}
         canEdit={false}
+        buddies={[]}
+        friends={[]}
         onClose={vi.fn()}
         onAdd={noop}
         onRemove={noop}
@@ -92,6 +100,8 @@ describe("StadiumDetail", () => {
         stadium={stadium}
         visits={[]}
         canEdit
+        buddies={[]}
+        friends={[]}
         onClose={vi.fn()}
         onAdd={noop}
         onRemove={noop}
@@ -113,6 +123,8 @@ describe("StadiumDetail", () => {
         stadium={stadium}
         visits={[]}
         canEdit
+        buddies={[]}
+        friends={[]}
         onClose={vi.fn()}
         onAdd={onAdd}
         onRemove={noop}
@@ -131,6 +143,8 @@ describe("StadiumDetail", () => {
       expect(onAdd).toHaveBeenCalledWith({
         date: "2024-07-01",
         opponent: "Boston Red Sox",
+        buddyIds: [],
+        friendUids: [],
       }),
     );
   });
@@ -142,6 +156,8 @@ describe("StadiumDetail", () => {
         stadium={stadium}
         visits={[visit("visit-123", "2024-05-01")]}
         canEdit
+        buddies={[]}
+        friends={[]}
         onClose={vi.fn()}
         onAdd={noop}
         onRemove={onRemove}
@@ -159,6 +175,8 @@ describe("StadiumDetail", () => {
         stadium={stadium}
         visits={[]}
         canEdit
+        buddies={[]}
+        friends={[]}
         onClose={onClose}
         onAdd={noop}
         onRemove={noop}
@@ -175,6 +193,8 @@ describe("StadiumDetail", () => {
         stadium={stadium}
         visits={[visit("v1", "2024-05-01", "Boston Red Sox", 1)]}
         canEdit
+        buddies={[]}
+        friends={[]}
         onClose={vi.fn()}
         onAdd={noop}
         onRemove={noop}
@@ -195,6 +215,8 @@ describe("StadiumDetail", () => {
         stadium={stadium}
         visits={[visit("v1", "2024-05-01", "Boston Red Sox", 1)]}
         canEdit
+        buddies={[]}
+        friends={[]}
         onClose={vi.fn()}
         onAdd={noop}
         onRemove={noop}
@@ -213,6 +235,8 @@ describe("StadiumDetail", () => {
       expect(onUpdate).toHaveBeenCalledWith("v1", {
         date: "2025-06-15",
         opponent: "Tampa Bay Rays",
+        buddyIds: [],
+        friendUids: [],
       }),
     );
     // Form collapses back to read mode

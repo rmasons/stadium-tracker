@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useAuth } from "@/components/AuthProvider";
 import { VisitedList } from "@/components/VisitedList";
 import { FriendManager } from "@/components/FriendManager";
+import { BuddyManager } from "@/components/BuddyManager";
 import { subscribeToVisits, removeVisit } from "@/lib/visits";
 import {
   acceptFriendRequest,
@@ -12,14 +13,16 @@ import {
   sendFriendRequest,
   subscribeToFriendships,
 } from "@/lib/friends";
+import { addBuddy, removeBuddy, renameBuddy, subscribeToBuddies } from "@/lib/buddies";
 import { setUsername } from "@/lib/username";
 import { shareSummary, summarize } from "@/lib/stats";
-import type { Friendship, Visit } from "@/lib/types";
+import type { Buddy, Friendship, Visit } from "@/lib/types";
 
 export default function TrackerPage() {
   const { user, profile, loading, configured, refreshProfile } = useAuth();
   const [visits, setVisits] = useState<Visit[]>([]);
   const [friendships, setFriendships] = useState<Friendship[]>([]);
+  const [buddies, setBuddies] = useState<Buddy[]>([]);
   const [origin, setOrigin] = useState("");
   const [copied, setCopied] = useState(false);
   const [copiedSummary, setCopiedSummary] = useState(false);
@@ -46,6 +49,15 @@ export default function TrackerPage() {
       return;
     }
     return subscribeToFriendships(user.uid, setFriendships);
+  }, [user]);
+
+  useEffect(() => {
+    if (!user) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      setBuddies([]);
+      return;
+    }
+    return subscribeToBuddies(user.uid, setBuddies);
   }, [user]);
 
   const summary = useMemo(() => summarize(visits), [visits]);
@@ -173,6 +185,15 @@ export default function TrackerPage() {
         onSendRequest={(username) => sendFriendRequest(user.uid, username)}
         onAccept={acceptFriendRequest}
         onRemove={removeFriend}
+      />
+
+      <BuddyManager
+        buddies={buddies}
+        onAdd={async (name) => {
+          await addBuddy(user.uid, name);
+        }}
+        onRemove={(buddyId) => removeBuddy(user.uid, buddyId)}
+        onRename={(buddyId, name) => renameBuddy(user.uid, buddyId, name)}
       />
 
       <div className="mt-6">

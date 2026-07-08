@@ -13,6 +13,8 @@ function visit(stadiumId: string, date = "", opponent = ""): Visit {
     opponent,
     createdAt: 0,
     updatedAt: 0,
+    buddyIds: [],
+    friendUids: [],
   };
 }
 

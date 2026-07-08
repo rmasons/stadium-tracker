@@ -4,16 +4,25 @@ import { useState, type CSSProperties } from "react";
 import { StadiumDetail } from "./StadiumDetail";
 import { getLogoUrl } from "@/lib/logos";
 import { getPhotoUrl } from "@/lib/photos";
-import type { Stadium, Visit } from "@/lib/types";
+import type { Buddy, FriendProfile, Stadium, Visit } from "@/lib/types";
+
+interface VisitInput {
+  date: string;
+  opponent: string;
+  buddyIds: string[];
+  friendUids: string[];
+}
 
 interface Props {
   stadium: Stadium | null;
   visits: Visit[];
   canEdit: boolean;
+  buddies: Buddy[];
+  friends: FriendProfile[];
   onClose: () => void;
-  onAdd: (input: { date: string; opponent: string }) => Promise<void>;
+  onAdd: (input: VisitInput) => Promise<void>;
   onRemove: (visitId: string) => Promise<void>;
-  onUpdate: (visitId: string, input: { date: string; opponent: string }) => Promise<void>;
+  onUpdate: (visitId: string, input: VisitInput) => Promise<void>;
   emptyHint?: string;
 }
 
@@ -36,6 +45,8 @@ export function MapDetailPanel({
   stadium,
   visits,
   canEdit,
+  buddies,
+  friends,
   onClose,
   onAdd,
   onRemove,
@@ -49,6 +60,8 @@ export function MapDetailPanel({
       stadium={stadium}
       visits={visits}
       canEdit={canEdit}
+      buddies={buddies}
+      friends={friends}
       onClose={onClose}
       onAdd={onAdd}
       onRemove={onRemove}
@@ -62,6 +75,8 @@ function PanelBody({
   stadium,
   visits,
   canEdit,
+  buddies,
+  friends,
   onClose,
   onAdd,
   onRemove,
@@ -98,6 +113,8 @@ function PanelBody({
           stadium={stadium}
           visits={visits}
           canEdit={canEdit}
+          buddies={buddies}
+          friends={friends}
           onClose={() => setEditing(false)}
           onAdd={onAdd}
           onRemove={onRemove}
