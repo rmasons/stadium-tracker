@@ -4,13 +4,18 @@ Track the MLB and NFL stadiums you've visited, log the date and opponent for
 each visit, and share a public map of your trackers with friends.
 
 - **Map** of all **30 MLB + 32 NFL** stadiums across the US & Canada. Each pin
-  is a **team badge** (team color + abbreviation, with a blue/red league ring),
-  and an **All / MLB / NFL filter**. Same-city venues (Detroit, Philly,
-  Baltimore, …) automatically **fan apart** so no pin hides behind another.
-  Optional **team logos** — see [`public/logos/README.md`](public/logos/README.md).
+  is a classic teardrop with the **team logo** in a white circle, league-colored
+  body (blue for MLB, red-orange for NFL), and an **All / MLB / NFL filter**.
+  Same-city venues automatically **fan apart** so no pin hides behind another;
+  the fan-out uses per-league offsets when a single league is filtered so
+  same-league co-located pairs (Giants/Jets, Rams/Chargers, Cubs/Sox) stay
+  separated. The map defaults to **dark mode** and follows the system
+  light/dark preference. **Visited stadiums** render at full opacity;
+  unvisited ones dim to 55% so your progress reads at a glance.
 - **Google sign-in** via Firebase Auth.
-- Click a pin → **log a visit** (date + opponent). Been more than once?
-  **Log repeat visits** — each is its own record.
+- Click a pin → **detail panel** with a real **stadium photo** (Wikimedia
+  Commons), the team logo as fallback, plus an **"I've been here"** button to
+  **log a visit** (date + opponent). Been more than once? **Log repeat visits** — each is its own record.
 - **My Tracker** — a sortable list, **completion progress bar**, and per-league
   counts.
 - **Share URL** — every user gets a public read-only page at `/u/[username]`,
@@ -145,30 +150,33 @@ usernames/{username}            # uniqueness + share-URL lookup — { uid }
   resolve a handle to a uid. Renaming a username is an atomic transaction.
 - The two NFL venues shared by two teams (MetLife → Giants + Jets, SoFi →
   Rams + Chargers) are stored as **separate team entries** so all 32 NFL teams
-  are individually trackable; the overlapping pins are nudged ~600 m so both
-  stay clickable. See [`lib/stadiums.ts`](lib/stadiums.ts).
+  are individually trackable. Co-located pins are separated by a CSS pixel
+  offset computed by [`lib/pins.ts`](lib/pins.ts) — no coordinate nudging,
+  so both pins point at the same real-world location. See
+  [`lib/stadiums.ts`](lib/stadiums.ts).
 
 ---
 
-## 8. CI/CD — staged promotion pipeline
+## 8. CI/CD — promotion pipeline
 
-This repo follows the house `dev → test → main` model used across this
-development folder:
+This repo uses a two-branch `dev → main` model:
 
 | Branch | Role | Checks on incoming PRs |
 | --- | --- | --- |
 | `dev` | Features land here | `claude-code-review.yml` — advisory Claude review |
-| `test` | Staging | `promotion-review.yml` (**blocking**) + `build.yml` |
 | `main` | Production | `promotion-review.yml` (**blocking**) + `build.yml` |
 
 - [`build.yml`](.github/workflows/build.yml) runs `tsc --noEmit`, the unit
-  tests (`npm test`), and `next build` on PRs to `test`/`main`.
+  tests (`npm test`), and `next build` on PRs to `main`.
 - [`claude-code-review.yml`](.github/workflows/claude-code-review.yml) is a
   fresh-context advisory review on PRs to `dev`.
 - [`promotion-review.yml`](.github/workflows/promotion-review.yml) is a
   **blocking** fresh-context review that fails the check (and, via branch
   protection, blocks the merge) on any high/critical finding when promoting to
-  `test` or `main`.
+  `main`.
+- [`auto-merge.yml`](.github/workflows/auto-merge.yml) enables squash
+  auto-merge on every PR targeting `main` — the merge fires automatically once
+  both required checks pass, no manual merge step needed.
 
 **To finish wiring this up** (these are one-time, account-owned steps — do them
 yourself, don't paste secrets into a chat):
@@ -176,7 +184,7 @@ yourself, don't paste secrets into a chat):
 ```bash
 # From inside this directory, after the repo is on GitHub:
 gh secret set CLAUDE_CODE_OAUTH_TOKEN     # paste output of: claude setup-token
-# Then set up the test branch + branch protection per the shared guide:
+# Then apply branch protection per the shared guide:
 #   ~/Desktop/development/.claude-review/PIPELINE.md
 ```
 
@@ -199,7 +207,7 @@ on the repo for the review Actions to post comments.
 
 ### Testing
 
-The suite (Vitest, **54 tests**) covers pure logic in Node and React components
+The suite (Vitest, **81 tests**) covers pure logic in Node and React components
 in jsdom, so behavior is verified without a browser or live Firebase:
 
 - [`lib/stadiums.test.ts`](lib/stadiums.test.ts) — data integrity: exactly
@@ -227,7 +235,7 @@ wired to them.
 
 ## 10. What's verified vs. what needs your keys
 
-- ✅ **Verified locally:** the app type-checks, passes 43 tests, builds with
+- ✅ **Verified locally:** the app type-checks, passes 81 tests, builds with
   zero env vars, and every route (`/`, `/tracker`, `/u/[username]`) renders
   without errors.
 - 🔑 **Needs your setup to exercise end-to-end:** Google sign-in and the live

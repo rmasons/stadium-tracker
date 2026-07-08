@@ -65,6 +65,8 @@ interface Props {
   hideSelectedLabel?: boolean;
   /** Lets a parent (e.g. 1B's custom zoom buttons) drive the map instance. */
   onMapReady?: (map: MapboxMap) => void;
+  /** IDs of stadiums the user has visited; unvisited pins are dimmed. */
+  visitedIds?: Set<string>;
 }
 
 export function StadiumMap({
@@ -74,6 +76,7 @@ export function StadiumMap({
   showNavControl = true,
   hideSelectedLabel = false,
   onMapReady,
+  visitedIds,
 }: Props) {
   const containerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<MapboxMap | null>(null);
@@ -83,9 +86,11 @@ export function StadiumMap({
   // Latest callback/prop values without re-running the (expensive) init effect.
   const onSelectRef = useRef(onSelect);
   const leagueFilterRef = useRef(leagueFilter);
+  const visitedIdsRef = useRef(visitedIds);
   useEffect(() => {
     onSelectRef.current = onSelect;
     leagueFilterRef.current = leagueFilter;
+    visitedIdsRef.current = visitedIds;
   });
 
   // Show a metro's cluster badge (and hide its members) when the map is
@@ -219,6 +224,11 @@ export function StadiumMap({
           el.appendChild(label);
         }
 
+        el.classList.toggle(
+          "pin--visited",
+          visitedIdsRef.current?.has(stadium.id) ?? false,
+        );
+
         el.addEventListener("click", (event) => {
           event.stopPropagation();
           onSelectRef.current(stadium);
@@ -309,6 +319,26 @@ export function StadiumMap({
     }
     refreshClusters.current();
   }, [selectedId, leagueFilter]);
+
+  // Reflect visited state changes onto marker elements. The container class
+  // gates the unvisited-dimming CSS so a user with zero visits (signed out or
+  // brand new) sees all pins at full opacity instead of a uniformly dimmed map.
+  // Toggled via classList (not className) so Mapbox's own container classes
+  // survive React re-renders.
+  useEffect(() => {
+    containerRef.current?.classList.toggle(
+      "map--has-visits",
+      (visitedIds?.size ?? 0) > 0,
+    );
+    for (const stadium of STADIUMS) {
+      const el = markersRef.current[stadium.id];
+      if (!el) continue;
+      el.classList.toggle(
+        "pin--visited",
+        visitedIds?.has(stadium.id) ?? false,
+      );
+    }
+  }, [visitedIds]);
 
   // Ease to a stadium when it becomes selected, breaking its cluster apart
   // (zooming in) if it was collapsed into a metro badge.

@@ -27,6 +27,7 @@ interface Props {
   onAdd: (input: { date: string; opponent: string }) => Promise<void>;
   onRemove: (visitId: string) => Promise<void>;
   onUpdate: (visitId: string, input: { date: string; opponent: string }) => Promise<void>;
+  pendingFriendCount?: number;
 }
 
 /** Option 1B — sidebar + map split (see design_handoff_redesign). */
@@ -42,6 +43,7 @@ export function LayoutB({
   onAdd,
   onRemove,
   onUpdate,
+  pendingFriendCount,
 }: Props) {
   const mapRef = useRef<MapboxMap | null>(null);
   const [zoomedIn, setZoomedIn] = useState(false);
@@ -55,6 +57,7 @@ export function LayoutB({
         visitedIds={visitedIds}
         selectedId={selected?.id ?? null}
         onSelectStadium={onSelect}
+        pendingFriendCount={pendingFriendCount}
       />
 
       <div style={{ position: "relative", flex: 1 }}>
@@ -62,6 +65,7 @@ export function LayoutB({
           selectedId={selected?.id ?? null}
           leagueFilter={leagueFilter}
           onSelect={onSelect}
+          visitedIds={visitedIds}
           showNavControl={false}
           hideSelectedLabel
           onMapReady={(map) => {

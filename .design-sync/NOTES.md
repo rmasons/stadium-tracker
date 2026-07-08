@@ -76,3 +76,22 @@ a stale copy silently ships outdated styling with no build error.
   the config's `componentSrcMap` path together.
 - No Storybook, so every preview is authored from scratch (no reference
   render to diff against) — grades are absolute-rubric, not comparative.
+- **Token system expanded.** `app/globals.css` now has a dark-default token
+  palette (`--surface`, `--selected`, `--ink-medium` added; all components
+  switched from literal `oklch()` to `var(--token)`). Before a re-sync, run
+  the CSS copy step below so the compiled chunk includes the updated token
+  values and dark-mode overrides. The `--mlb:` grep still finds the right
+  chunk.
+- **Stadium photos added.** `lib/photos.ts` maps all 62 stadium IDs to
+  Wikimedia Commons thumbnail URLs (verified HTTP 200). `MapDetailPanel` now
+  imports `getPhotoUrl` and shows a photo-first 64×64 image slot (photo →
+  logo → striped placeholder). If a re-sync includes `MapDetailPanel`, the
+  `dtsPropsFor` entry doesn't need updating (no prop changes), but the
+  preview composition should exercise the photo path — pass a stadium ID that
+  has a photo (all 62 do) to confirm the `<img>` renders rather than the
+  placeholder.
+- **Visited-state CSS.** `app/globals.css` gained a `.pin--visited` rule:
+  `.pin[data-league]:not(.pin--visited):not(.pin--selected) { opacity: 0.55; }`.
+  This is map-only and has no effect on any synced component, but it will be
+  in the compiled chunk — the `--mlb:` grep approach still finds the right
+  file.

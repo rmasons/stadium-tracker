@@ -3,6 +3,7 @@
 import { useState, type CSSProperties } from "react";
 import { StadiumDetail } from "./StadiumDetail";
 import { getLogoUrl } from "@/lib/logos";
+import { getPhotoUrl } from "@/lib/photos";
 import type { Stadium, Visit } from "@/lib/types";
 
 interface Props {
@@ -68,6 +69,10 @@ function PanelBody({
   emptyHint,
 }: Props & { emptyHint: string }) {
   const [editing, setEditing] = useState(false);
+  // Wikimedia URLs can rot (files get renamed/deleted on Commons); on load
+  // failure fall through to the logo/placeholder instead of a broken image.
+  // Resets per stadium because PanelBody is keyed on the stadium id.
+  const [photoFailed, setPhotoFailed] = useState(false);
 
   if (!stadium) {
     return (
@@ -105,6 +110,7 @@ function PanelBody({
   const ordered = [...visits].sort((a, b) => b.createdAt - a.createdAt);
   const latest = ordered[0] as Visit | undefined;
   const logoUrl = getLogoUrl(stadium.id);
+  const photoUrl = getPhotoUrl(stadium.id);
 
   let meta: string;
   if (latest) {
@@ -146,7 +152,15 @@ function PanelBody({
       >
         ✕
       </button>
-      {logoUrl ? (
+      {photoUrl && !photoFailed ? (
+        // eslint-disable-next-line @next/next/no-img-element
+        <img
+          src={photoUrl}
+          alt={stadium.name}
+          onError={() => setPhotoFailed(true)}
+          style={{ width: 64, height: 64, objectFit: "cover", borderRadius: 12, flexShrink: 0 }}
+        />
+      ) : logoUrl ? (
         // eslint-disable-next-line @next/next/no-img-element
         <img
           src={logoUrl}

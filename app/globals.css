@@ -195,6 +195,19 @@ body {
   line-height: 1;
 }
 
+/* Visited / unvisited distinction on stadium pins.
+   Scoped to .map--has-visits (toggled by StadiumMap when at least one stadium
+   is visited) so signed-out and zero-visit users don't see the whole map dimmed.
+   Targets .pin__body, not the .pin marker root: Mapbox GL writes an inline
+   `opacity` on every marker root for occlusion fading, which silently overrides
+   any stylesheet opacity set there.
+   Only targets real stadium pins (which have data-league); cluster badges
+   don't carry data-league and are intentionally unaffected.
+   Selected pins always show at full opacity so they pop regardless of visit state. */
+.map--has-visits .pin[data-league]:not(.pin--visited):not(.pin--selected) .pin__body {
+  opacity: 0.55;
+}
+
 /* Mapbox popups inherit our type and theme. */
 .mapboxgl-popup-content {
   font-family: inherit;
