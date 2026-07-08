@@ -4,14 +4,22 @@ import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { useAuth } from "@/components/AuthProvider";
 import { VisitedList } from "@/components/VisitedList";
+import { FriendManager } from "@/components/FriendManager";
 import { subscribeToVisits, removeVisit } from "@/lib/visits";
+import {
+  acceptFriendRequest,
+  removeFriend,
+  sendFriendRequest,
+  subscribeToFriendships,
+} from "@/lib/friends";
 import { setUsername } from "@/lib/username";
 import { shareSummary, summarize } from "@/lib/stats";
-import type { Visit } from "@/lib/types";
+import type { Friendship, Visit } from "@/lib/types";
 
 export default function TrackerPage() {
   const { user, profile, loading, configured, refreshProfile } = useAuth();
   const [visits, setVisits] = useState<Visit[]>([]);
+  const [friendships, setFriendships] = useState<Friendship[]>([]);
   const [origin, setOrigin] = useState("");
   const [copied, setCopied] = useState(false);
   const [copiedSummary, setCopiedSummary] = useState(false);
@@ -29,6 +37,15 @@ export default function TrackerPage() {
       return;
     }
     return subscribeToVisits(user.uid, setVisits);
+  }, [user]);
+
+  useEffect(() => {
+    if (!user) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      setFriendships([]);
+      return;
+    }
+    return subscribeToFriendships(user.uid, setFriendships);
   }, [user]);
 
   const summary = useMemo(() => summarize(visits), [visits]);
@@ -149,6 +166,14 @@ export default function TrackerPage() {
           )}
         </div>
       )}
+
+      <FriendManager
+        uid={user.uid}
+        friendships={friendships}
+        onSendRequest={(username) => sendFriendRequest(user.uid, username)}
+        onAccept={acceptFriendRequest}
+        onRemove={removeFriend}
+      />
 
       <div className="mt-6">
         <VisitedList

@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import { LayoutB } from "@/components/redesign/LayoutB";
 import { useAuth } from "@/components/AuthProvider";
 import { subscribeToVisits, addVisit, removeVisit, updateVisit } from "@/lib/visits";
+import { subscribeToPendingCount } from "@/lib/friends";
 import { summarize } from "@/lib/stats";
 import type { League, Stadium, Visit } from "@/lib/types";
 
@@ -14,6 +15,7 @@ export default function HomePage() {
   const [visits, setVisits] = useState<Visit[]>([]);
   const [selected, setSelected] = useState<Stadium | null>(null);
   const [leagueFilter, setLeagueFilter] = useState<LeagueFilter>("ALL");
+  const [pendingFriendCount, setPendingFriendCount] = useState(0);
 
   useEffect(() => {
     if (!user) {
@@ -24,6 +26,15 @@ export default function HomePage() {
       return;
     }
     return subscribeToVisits(user.uid, setVisits);
+  }, [user]);
+
+  useEffect(() => {
+    if (!user) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      setPendingFriendCount(0);
+      return;
+    }
+    return subscribeToPendingCount(user.uid, setPendingFriendCount);
   }, [user]);
 
   const summary = useMemo(() => summarize(visits), [visits]);
@@ -72,7 +83,11 @@ export default function HomePage() {
           disabled. See the README to connect a project.
         </div>
       )}
-      <LayoutB {...shared} visitedIds={visitedIds} />
+      <LayoutB
+        {...shared}
+        visitedIds={visitedIds}
+        pendingFriendCount={pendingFriendCount}
+      />
     </div>
   );
 }

@@ -19,6 +19,8 @@ interface Props {
   visitedIds: Set<string>;
   selectedId: string | null;
   onSelectStadium: (stadium: Stadium) => void;
+  /** Incoming pending friend requests; > 0 shows a badge on "My Tracker". */
+  pendingFriendCount?: number;
 }
 
 export function SidebarB({
@@ -28,6 +30,7 @@ export function SidebarB({
   visitedIds,
   selectedId,
   onSelectStadium,
+  pendingFriendCount = 0,
 }: Props) {
   const { user, signOut } = useAuth();
   // Below ~768px the sidebar collapses into a bottom sheet: header + filter
@@ -129,9 +132,35 @@ export function SidebarB({
             )}
             <Link
               href="/tracker"
-              style={{ flex: 1, fontSize: 13, fontWeight: 700, color: "var(--ink-medium)" }}
+              style={{
+                flex: 1,
+                fontSize: 13,
+                fontWeight: 700,
+                color: "var(--ink-medium)",
+                display: "flex",
+                alignItems: "center",
+                gap: 6,
+              }}
             >
               My Tracker
+              {pendingFriendCount > 0 && (
+                <span
+                  aria-label={`${pendingFriendCount} pending friend request${
+                    pendingFriendCount === 1 ? "" : "s"
+                  }`}
+                  style={{
+                    background: "var(--nfl)",
+                    color: "#fff",
+                    fontSize: 11,
+                    fontWeight: 700,
+                    lineHeight: 1,
+                    padding: "3px 6px",
+                    borderRadius: 999,
+                  }}
+                >
+                  {pendingFriendCount}
+                </span>
+              )}
             </Link>
             <button
               onClick={() => void signOut()}

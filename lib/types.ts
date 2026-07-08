@@ -46,3 +46,30 @@ export interface PublicProfile {
   displayName: string;
   photoURL: string;
 }
+
+export type FriendshipStatus = "pending" | "accepted";
+
+/** The stored fields of a friendship (the Firestore document data). One doc
+ *  per pair at friendships/{pairId} where pairId = sorted UIDs joined by "_" —
+ *  a pending doc is a friend request, an accepted doc is a friendship. */
+export interface FriendshipData {
+  /** Both members' UIDs, sorted ascending (enforced by rules). */
+  members: [string, string];
+  /** UID of the request sender; only the OTHER member may accept. */
+  requestedBy: string;
+  status: FriendshipStatus;
+  /** Millis since epoch when the request was sent. */
+  createdAt: number;
+  /** Millis since epoch of the last write (send or accept). */
+  updatedAt: number;
+}
+
+/** A friendship with its Firestore document id (the pairId) attached. */
+export interface Friendship extends FriendshipData {
+  id: string;
+}
+
+/** A friend's public profile plus their uid, for display in friend lists. */
+export interface FriendProfile extends PublicProfile {
+  uid: string;
+}

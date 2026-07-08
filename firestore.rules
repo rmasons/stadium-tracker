@@ -49,6 +49,54 @@ service cloud.firestore {
       }
     }
 
+    // Friendships: one doc per pair at friendships/{pairId}, where
+    // pairId = sorted UIDs joined by '_'. A pending doc is a friend request;
+    // accepting flips it in place. Readable only by the two members.
+    match /friendships/{friendshipId} {
+      // Get must work on a NONEXISTENT doc too: sendFriendRequest does a
+      // pre-create existence check, and referencing resource.data when
+      // resource is null errors (→ permission-denied). Gate the null case on
+      // the caller's uid appearing in the doc ID instead. Safe: Firebase Auth
+      // UIDs are alphanumeric and never contain '_'.
+      allow get: if request.auth != null
+        && (resource == null
+            ? request.auth.uid in friendshipId.split('_')
+            : request.auth.uid in resource.data.members);
+      // List = the members array-contains-uid subscription.
+      allow list: if request.auth != null
+        && request.auth.uid in resource.data.members;
+      // Create = send request: caller must be a member and the requester.
+      // members[0] < members[1] enforces sorted AND distinct (no
+      // self-friending), and binding friendshipId to members prevents
+      // squatting another pair's ID to block them from ever connecting.
+      allow create: if request.auth != null
+        && request.resource.data.keys().hasOnly(
+             ['members', 'requestedBy', 'status', 'createdAt', 'updatedAt'])
+        && request.resource.data.members.size() == 2
+        && request.resource.data.members[0] < request.resource.data.members[1]
+        && friendshipId ==
+             request.resource.data.members[0] + '_' + request.resource.data.members[1]
+        && request.auth.uid in request.resource.data.members
+        && request.resource.data.requestedBy == request.auth.uid
+        && request.resource.data.status == 'pending'
+        && request.resource.data.createdAt is number
+        && request.resource.data.updatedAt is number;
+      // Update = accept only: the non-requester flips pending→accepted;
+      // members/requestedBy/createdAt are immutable.
+      allow update: if request.auth != null
+        && request.auth.uid in resource.data.members
+        && resource.data.status == 'pending'
+        && request.resource.data.status == 'accepted'
+        && request.auth.uid != resource.data.requestedBy
+        && request.resource.data.members == resource.data.members
+        && request.resource.data.requestedBy == resource.data.requestedBy
+        && request.resource.data.createdAt == resource.data.createdAt
+        && request.resource.data.updatedAt is number;
+      // Delete: either member (unfriend, decline, or cancel).
+      allow delete: if request.auth != null
+        && request.auth.uid in resource.data.members;
+    }
+
     // Username registry: usernames/{username} -> { uid }. Used for uniqueness
     // and to resolve a share URL to a uid.
     match /usernames/{username} {
