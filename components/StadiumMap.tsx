@@ -320,8 +320,16 @@ export function StadiumMap({
     refreshClusters.current();
   }, [selectedId, leagueFilter]);
 
-  // Reflect visited state changes onto marker elements.
+  // Reflect visited state changes onto marker elements. The container class
+  // gates the unvisited-dimming CSS so a user with zero visits (signed out or
+  // brand new) sees all pins at full opacity instead of a uniformly dimmed map.
+  // Toggled via classList (not className) so Mapbox's own container classes
+  // survive React re-renders.
   useEffect(() => {
+    containerRef.current?.classList.toggle(
+      "map--has-visits",
+      (visitedIds?.size ?? 0) > 0,
+    );
     for (const stadium of STADIUMS) {
       const el = markersRef.current[stadium.id];
       if (!el) continue;

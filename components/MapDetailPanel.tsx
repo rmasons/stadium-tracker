@@ -69,6 +69,10 @@ function PanelBody({
   emptyHint,
 }: Props & { emptyHint: string }) {
   const [editing, setEditing] = useState(false);
+  // Wikimedia URLs can rot (files get renamed/deleted on Commons); on load
+  // failure fall through to the logo/placeholder instead of a broken image.
+  // Resets per stadium because PanelBody is keyed on the stadium id.
+  const [photoFailed, setPhotoFailed] = useState(false);
 
   if (!stadium) {
     return (
@@ -148,11 +152,12 @@ function PanelBody({
       >
         ✕
       </button>
-      {photoUrl ? (
+      {photoUrl && !photoFailed ? (
         // eslint-disable-next-line @next/next/no-img-element
         <img
           src={photoUrl}
           alt={stadium.name}
+          onError={() => setPhotoFailed(true)}
           style={{ width: 64, height: 64, objectFit: "cover", borderRadius: 12, flexShrink: 0 }}
         />
       ) : logoUrl ? (
