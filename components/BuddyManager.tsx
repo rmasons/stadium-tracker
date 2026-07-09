@@ -10,6 +10,9 @@ interface Props {
   onRename: (buddyId: string, name: string) => Promise<void>;
 }
 
+// Matches the Firestore rules cap on buddies/{buddyId}.name.
+const MAX_BUDDY_NAME_LENGTH = 50;
+
 /**
  * Buddies card on /tracker: an add form plus a list of existing buddies with
  * inline rename and remove. Buddies are private, account-less companions —
@@ -27,6 +30,10 @@ export function BuddyManager({ buddies, onAdd, onRemove, onRename }: Props) {
   async function add() {
     const trimmed = name.trim();
     if (!trimmed) return;
+    if (trimmed.length > MAX_BUDDY_NAME_LENGTH) {
+      setMsg(`Name must be ${MAX_BUDDY_NAME_LENGTH} characters or fewer.`);
+      return;
+    }
     setBusy(true);
     setMsg(null);
     try {
@@ -52,6 +59,10 @@ export function BuddyManager({ buddies, onAdd, onRemove, onRename }: Props) {
   async function saveEdit(buddyId: string) {
     const trimmed = editName.trim();
     if (!trimmed) return;
+    if (trimmed.length > MAX_BUDDY_NAME_LENGTH) {
+      setMsg(`Name must be ${MAX_BUDDY_NAME_LENGTH} characters or fewer.`);
+      return;
+    }
     setBusy(true);
     setMsg(null);
     try {

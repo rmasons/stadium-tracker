@@ -13,6 +13,39 @@ service cloud.firestore {
       return request.auth != null && request.auth.uid == uid;
     }
 
+    function friendshipId(a, b) {
+      return a < b ? a + '_' + b : b + '_' + a;
+    }
+
+    function isAcceptedFriend(ownerUid, otherUid) {
+      // A single get() call, not exists() + get() — each friend costs one
+      // call against Firestore's 10-per-request get()/exists() budget, so
+      // this is what makes checking up to 10 friendUids fit at all. get() on
+      // a nonexistent friendship doc errors accessing .data, which Firestore
+      // rules evaluate as a deny (the correct direction for a missing/
+      // unaccepted friendship).
+      let path = /databases/$(database)/documents/friendships/$(friendshipId(ownerUid, otherUid));
+      return get(path).data.status == 'accepted';
+    }
+
+    // Every uid in `uids` must be an accepted friend of `ownerUid` — otherwise
+    // a visit doc (world-readable) could tag any real user as having
+    // attended a game without their consent. Rules can't loop over a
+    // variable-length list, so this is unrolled up to the field's own size
+    // cap (10); a request with more entries already fails that cap first.
+    function allAcceptedFriends(ownerUid, uids) {
+      return uids.size() <= 0 || isAcceptedFriend(ownerUid, uids[0])
+        && (uids.size() <= 1 || isAcceptedFriend(ownerUid, uids[1]))
+        && (uids.size() <= 2 || isAcceptedFriend(ownerUid, uids[2]))
+        && (uids.size() <= 3 || isAcceptedFriend(ownerUid, uids[3]))
+        && (uids.size() <= 4 || isAcceptedFriend(ownerUid, uids[4]))
+        && (uids.size() <= 5 || isAcceptedFriend(ownerUid, uids[5]))
+        && (uids.size() <= 6 || isAcceptedFriend(ownerUid, uids[6]))
+        && (uids.size() <= 7 || isAcceptedFriend(ownerUid, uids[7]))
+        && (uids.size() <= 8 || isAcceptedFriend(ownerUid, uids[8]))
+        && (uids.size() <= 9 || isAcceptedFriend(ownerUid, uids[9]));
+    }
+
     function validProfile(data) {
       return data.keys().hasOnly(['username', 'displayName', 'photoURL'])
         && data.username is string
@@ -42,13 +75,17 @@ service cloud.firestore {
           && request.resource.data.opponent is string
           // buddyIds/friendUids are optional (older clients may omit them)
           // but capped so a malicious client can't stuff megabytes of ids
-          // into this world-readable doc.
+          // into this world-readable doc. friendUids is capped at 10 (not
+          // 25) because rules can't loop over a variable-length list — every
+          // entry must be individually confirmed as an accepted friend via
+          // allAcceptedFriends, which is unrolled up to that cap.
           && (!('buddyIds' in request.resource.data)
               || (request.resource.data.buddyIds is list
                   && request.resource.data.buddyIds.size() <= 25))
           && (!('friendUids' in request.resource.data)
               || (request.resource.data.friendUids is list
-                  && request.resource.data.friendUids.size() <= 25));
+                  && request.resource.data.friendUids.size() <= 10
+                  && allAcceptedFriends(uid, request.resource.data.friendUids)));
         // Updates may not move a visit to a different stadium.
         allow update: if isOwner(uid)
           && request.resource.data.stadiumId == resource.data.stadiumId
@@ -59,7 +96,8 @@ service cloud.firestore {
                   && request.resource.data.buddyIds.size() <= 25))
           && (!('friendUids' in request.resource.data)
               || (request.resource.data.friendUids is list
-                  && request.resource.data.friendUids.size() <= 25));
+                  && request.resource.data.friendUids.size() <= 10
+                  && allAcceptedFriends(uid, request.resource.data.friendUids)));
         allow delete: if isOwner(uid);
       }
 

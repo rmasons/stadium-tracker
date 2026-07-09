@@ -29,14 +29,21 @@ export function AttendeePicker({
   function toggleBuddy(id: string) {
     const next = selectedBuddyIds.includes(id)
       ? selectedBuddyIds.filter((b) => b !== id)
-      : [...selectedBuddyIds, id];
+      : selectedBuddyIds.length >= 25
+        ? selectedBuddyIds
+        : [...selectedBuddyIds, id];
     onChange(next, selectedFriendUids);
   }
 
+  // 10 matches the Firestore rules cap on friendUids (each entry there must
+  // be individually confirmed as an accepted friend, so the cap is lower
+  // than buddyIds' 25).
   function toggleFriend(uid: string) {
     const next = selectedFriendUids.includes(uid)
       ? selectedFriendUids.filter((f) => f !== uid)
-      : [...selectedFriendUids, uid];
+      : selectedFriendUids.length >= 10
+        ? selectedFriendUids
+        : [...selectedFriendUids, uid];
     onChange(selectedBuddyIds, next);
   }
 
