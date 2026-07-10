@@ -28,22 +28,34 @@ service cloud.firestore {
       return get(path).data.status == 'accepted';
     }
 
-    // Every uid in `uids` must be an accepted friend of `ownerUid` — otherwise
-    // a visit doc (world-readable) could tag any real user as having
-    // attended a game without their consent. Rules can't loop over a
-    // variable-length list, so this is unrolled up to the field's own size
-    // cap (10); a request with more entries already fails that cap first.
-    function allAcceptedFriends(ownerUid, uids) {
-      return uids.size() <= 0 || isAcceptedFriend(ownerUid, uids[0])
-        && (uids.size() <= 1 || isAcceptedFriend(ownerUid, uids[1]))
-        && (uids.size() <= 2 || isAcceptedFriend(ownerUid, uids[2]))
-        && (uids.size() <= 3 || isAcceptedFriend(ownerUid, uids[3]))
-        && (uids.size() <= 4 || isAcceptedFriend(ownerUid, uids[4]))
-        && (uids.size() <= 5 || isAcceptedFriend(ownerUid, uids[5]))
-        && (uids.size() <= 6 || isAcceptedFriend(ownerUid, uids[6]))
-        && (uids.size() <= 7 || isAcceptedFriend(ownerUid, uids[7]))
-        && (uids.size() <= 8 || isAcceptedFriend(ownerUid, uids[8]))
-        && (uids.size() <= 9 || isAcceptedFriend(ownerUid, uids[9]));
+    // A uid is fine to keep on the doc as-is (`existingUids` — the doc's
+    // friendUids before this write, [] on create) without re-checking
+    // friendship status; only a uid newly being ADDED must be an accepted
+    // friend right now. Without this grandfathering, unfriending someone
+    // already tagged on an old visit would permanently brick every future
+    // edit to that visit (even an unrelated field change), since the old
+    // rule re-validated the entire list on every write.
+    function isExistingOrNewlyAccepted(ownerUid, existingUids, uid) {
+      return existingUids.hasAll([uid]) || isAcceptedFriend(ownerUid, uid);
+    }
+
+    // Every uid in `uids` must be existing-or-an-accepted-friend of
+    // `ownerUid` — otherwise a visit doc (world-readable) could tag any real
+    // user as having attended a game without their consent. Rules can't loop
+    // over a variable-length list, so this is unrolled up to the field's own
+    // size cap (10); a request with more entries already fails that cap
+    // first.
+    function allAcceptedFriends(ownerUid, existingUids, uids) {
+      return uids.size() <= 0 || isExistingOrNewlyAccepted(ownerUid, existingUids, uids[0])
+        && (uids.size() <= 1 || isExistingOrNewlyAccepted(ownerUid, existingUids, uids[1]))
+        && (uids.size() <= 2 || isExistingOrNewlyAccepted(ownerUid, existingUids, uids[2]))
+        && (uids.size() <= 3 || isExistingOrNewlyAccepted(ownerUid, existingUids, uids[3]))
+        && (uids.size() <= 4 || isExistingOrNewlyAccepted(ownerUid, existingUids, uids[4]))
+        && (uids.size() <= 5 || isExistingOrNewlyAccepted(ownerUid, existingUids, uids[5]))
+        && (uids.size() <= 6 || isExistingOrNewlyAccepted(ownerUid, existingUids, uids[6]))
+        && (uids.size() <= 7 || isExistingOrNewlyAccepted(ownerUid, existingUids, uids[7]))
+        && (uids.size() <= 8 || isExistingOrNewlyAccepted(ownerUid, existingUids, uids[8]))
+        && (uids.size() <= 9 || isExistingOrNewlyAccepted(ownerUid, existingUids, uids[9]));
     }
 
     function validProfile(data) {
@@ -85,8 +97,11 @@ service cloud.firestore {
           && (!('friendUids' in request.resource.data)
               || (request.resource.data.friendUids is list
                   && request.resource.data.friendUids.size() <= 10
-                  && allAcceptedFriends(uid, request.resource.data.friendUids)));
-        // Updates may not move a visit to a different stadium.
+                  && allAcceptedFriends(uid, [], request.resource.data.friendUids)));
+        // Updates may not move a visit to a different stadium. friendUids
+        // already on the doc are grandfathered (see isExistingOrNewlyAccepted)
+        // so an update doesn't re-validate friendships that may since have
+        // ended — only newly-added uids must be accepted friends right now.
         allow update: if isOwner(uid)
           && request.resource.data.stadiumId == resource.data.stadiumId
           && request.resource.data.date is string
@@ -97,7 +112,10 @@ service cloud.firestore {
           && (!('friendUids' in request.resource.data)
               || (request.resource.data.friendUids is list
                   && request.resource.data.friendUids.size() <= 10
-                  && allAcceptedFriends(uid, request.resource.data.friendUids)));
+                  && allAcceptedFriends(
+                       uid,
+                       ('friendUids' in resource.data) ? resource.data.friendUids : [],
+                       request.resource.data.friendUids)));
         allow delete: if isOwner(uid);
       }
 
