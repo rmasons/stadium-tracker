@@ -1,8 +1,21 @@
 import { STADIUMS } from "@/lib/stadiums";
 import { StadiumDetail } from "@/components/StadiumDetail";
-import type { Visit } from "@/lib/types";
+import type { Buddy, FriendProfile, Visit } from "@/lib/types";
 
 const yankees = STADIUMS.find((s) => s.id === "mlb-yankees")!;
+
+// Sample attendees, so WithVisits can show the "With ..." attendee line
+// resolved from both a buddy (name-only, private) and a friend (public
+// profile) tagged on a visit.
+const buddies: Buddy[] = [{ id: "b1", name: "Dave", createdAt: 1 }];
+const friends: FriendProfile[] = [
+  {
+    uid: "u1",
+    username: "jsmith",
+    displayName: "Jamie Smith",
+    photoURL: "",
+  },
+];
 
 const visits: Visit[] = [
   {
@@ -13,6 +26,8 @@ const visits: Visit[] = [
     opponent: "Boston Red Sox",
     createdAt: 2,
     updatedAt: 2,
+    buddyIds: ["b1"],
+    friendUids: ["u1"],
   },
   {
     id: "v2",
@@ -22,6 +37,8 @@ const visits: Visit[] = [
     opponent: "Baltimore Orioles",
     createdAt: 1,
     updatedAt: 1,
+    buddyIds: [],
+    friendUids: [],
   },
 ];
 
@@ -45,6 +62,8 @@ export function WithVisits() {
       stadium={yankees}
       visits={visits}
       canEdit
+      buddies={buddies}
+      friends={friends}
       onClose={() => {}}
       onAdd={async () => {}}
       onRemove={async () => {}}
@@ -59,6 +78,8 @@ export function NoVisitsSignedIn() {
       stadium={yankees}
       visits={[]}
       canEdit
+      buddies={[]}
+      friends={[]}
       onClose={() => {}}
       onAdd={async () => {}}
       onRemove={async () => {}}
@@ -73,6 +94,8 @@ export function SignedOut() {
       stadium={yankees}
       visits={[]}
       canEdit={false}
+      buddies={[]}
+      friends={[]}
       onClose={() => {}}
       onAdd={async () => {}}
       onRemove={async () => {}}

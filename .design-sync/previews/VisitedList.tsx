@@ -14,6 +14,8 @@ const visits: Visit[] = [
     opponent: "Los Angeles Dodgers",
     createdAt: 2,
     updatedAt: 2,
+    buddyIds: [],
+    friendUids: [],
   },
   {
     id: "v2",
@@ -23,6 +25,8 @@ const visits: Visit[] = [
     opponent: "Seattle Seahawks",
     createdAt: 1,
     updatedAt: 1,
+    buddyIds: [],
+    friendUids: [],
   },
 ];
 

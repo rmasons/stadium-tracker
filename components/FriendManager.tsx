@@ -1,10 +1,10 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import Link from "next/link";
-import { getProfile } from "@/lib/username";
 import { otherMember } from "@/lib/friends";
-import type { Friendship, PublicProfile } from "@/lib/types";
+import { useFriendProfiles } from "@/lib/useFriendProfiles";
+import type { Friendship } from "@/lib/types";
 
 interface Props {
   uid: string;
@@ -30,30 +30,7 @@ export function FriendManager({
   const [username, setUsername] = useState("");
   const [busy, setBusy] = useState(false);
   const [msg, setMsg] = useState<string | null>(null);
-  // uid -> profile (null = fetched but missing, e.g. deleted account).
-  const [profiles, setProfiles] = useState<Record<string, PublicProfile | null>>(
-    {},
-  );
-
-  useEffect(() => {
-    let cancelled = false;
-    const unknown = friendships
-      .map((f) => otherMember(f, uid))
-      .filter((other) => !(other in profiles));
-    if (unknown.length === 0) return;
-    void Promise.all(
-      unknown.map(async (other) => [other, await getProfile(other)] as const),
-    ).then((entries) => {
-      if (cancelled) return;
-      setProfiles((prev) => ({ ...prev, ...Object.fromEntries(entries) }));
-    });
-    return () => {
-      cancelled = true;
-    };
-    // `profiles` is deliberately omitted: it's the cache this effect fills,
-    // and re-running on its own writes would just re-diff to an empty list.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [friendships, uid]);
+  const { profiles } = useFriendProfiles(uid, friendships);
 
   const incoming = friendships.filter(
     (f) => f.status === "pending" && f.requestedBy !== uid,

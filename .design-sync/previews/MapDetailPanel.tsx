@@ -1,8 +1,13 @@
 import { STADIUMS } from "@/lib/stadiums";
 import { MapDetailPanel } from "@/components/MapDetailPanel";
-import type { Visit } from "@/lib/types";
+import type { Buddy, FriendProfile, Visit } from "@/lib/types";
 
 const oracle = STADIUMS.find((s) => s.id === "mlb-giants")!;
+
+// Sample attendee so the Visited story's edit drawer (StadiumDetail nested
+// inside MapDetailPanel) can show a resolved "With ..." line.
+const buddies: Buddy[] = [{ id: "b1", name: "Priya", createdAt: 1 }];
+const friends: FriendProfile[] = [];
 
 const visits: Visit[] = [
   {
@@ -13,6 +18,8 @@ const visits: Visit[] = [
     opponent: "Los Angeles Dodgers",
     createdAt: 1,
     updatedAt: 1,
+    buddyIds: ["b1"],
+    friendUids: [],
   },
 ];
 
@@ -24,6 +31,8 @@ export function Empty() {
       stadium={null}
       visits={[]}
       canEdit={false}
+      buddies={[]}
+      friends={[]}
       onClose={() => {}}
       onAdd={async () => {}}
       onRemove={async () => {}}
@@ -38,6 +47,8 @@ export function Visited() {
       stadium={oracle}
       visits={visits}
       canEdit
+      buddies={buddies}
+      friends={friends}
       onClose={() => {}}
       onAdd={async () => {}}
       onRemove={async () => {}}
@@ -52,6 +63,8 @@ export function NotYetVisited() {
       stadium={oracle}
       visits={[]}
       canEdit
+      buddies={buddies}
+      friends={friends}
       onClose={() => {}}
       onAdd={async () => {}}
       onRemove={async () => {}}

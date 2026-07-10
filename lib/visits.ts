@@ -25,6 +25,11 @@ export interface VisitInput {
   friendUids?: string[];
 }
 
+/** The visit fields the add/edit forms collect (everything but stadiumId,
+ *  which the form's context supplies). Shared by the add/edit form components
+ *  so their prop signatures stay in lockstep with VisitInput. */
+export type VisitFormInput = Required<Omit<VisitInput, "stadiumId">>;
+
 /** Map a Firestore doc into a Visit, attaching its id. Fills defaults for
  *  older docs written before buddies/friends existed. */
 function toVisit(id: string, data: VisitData): Visit {
@@ -89,12 +94,7 @@ export async function addVisit(uid: string, input: VisitInput): Promise<string> 
 export async function updateVisit(
   uid: string,
   visitId: string,
-  patch: {
-    date: string;
-    opponent: string;
-    buddyIds?: string[];
-    friendUids?: string[];
-  },
+  patch: Omit<VisitInput, "stadiumId">,
 ): Promise<void> {
   const db = getDb();
   if (!db) throw new Error("Firebase is not configured.");
