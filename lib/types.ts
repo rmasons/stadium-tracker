@@ -32,6 +32,21 @@ export interface VisitData {
   createdAt: number;
   /** Millis since epoch of the last write. */
   updatedAt: number;
+  /**
+   * Privacy decision (explicit, because visits are `allow read: if true`):
+   * these two fields live on the world-readable visit doc. `buddyIds` are
+   * opaque refs into the owner-only `users/{uid}/buddies` subcollection, so
+   * no personal data (buddy names) leaks even though the ids are public.
+   * `friendUids` are real UIDs resolvable to public profiles, so storing
+   * them here deliberately makes "who attended with whom" publicly
+   * readable — acceptable since profiles are already public, but a one-way
+   * door once real users have data (see the Phase 2 plan for the
+   * owner-only-subcollection alternative if that ever needs to change).
+   */
+  /** Refs to users/{uid}/buddies/{buddyId} tagged as attendees. */
+  buddyIds: string[];
+  /** UIDs of friends (accepted friendship) tagged as attendees. */
+  friendUids: string[];
 }
 
 /** A visit with its Firestore document id attached (as read back). */
@@ -72,4 +87,20 @@ export interface Friendship extends FriendshipData {
 /** A friend's public profile plus their uid, for display in friend lists. */
 export interface FriendProfile extends PublicProfile {
   uid: string;
+}
+
+/** The stored fields of a buddy (the Firestore document data). Buddies are
+ *  named companions stored at users/{uid}/buddies/{buddyId} — strictly
+ *  private to the owner (no world read, unlike profiles/visits). A buddy
+ *  needs no account of their own; the name is personal data the owner
+ *  chooses to record, so it must never appear on a world-readable doc. */
+export interface BuddyData {
+  name: string;
+  /** Millis since epoch when the buddy was added. */
+  createdAt: number;
+}
+
+/** A buddy with its Firestore document id attached. */
+export interface Buddy extends BuddyData {
+  id: string;
 }

@@ -13,6 +13,51 @@ service cloud.firestore {
       return request.auth != null && request.auth.uid == uid;
     }
 
+    function friendshipId(a, b) {
+      return a < b ? a + '_' + b : b + '_' + a;
+    }
+
+    function isAcceptedFriend(ownerUid, otherUid) {
+      // A single get() call, not exists() + get() — each friend costs one
+      // call against Firestore's 10-per-request get()/exists() budget, so
+      // this is what makes checking up to 10 friendUids fit at all. get() on
+      // a nonexistent friendship doc errors accessing .data, which Firestore
+      // rules evaluate as a deny (the correct direction for a missing/
+      // unaccepted friendship).
+      let path = /databases/$(database)/documents/friendships/$(friendshipId(ownerUid, otherUid));
+      return get(path).data.status == 'accepted';
+    }
+
+    // A uid is fine to keep on the doc as-is (`existingUids` — the doc's
+    // friendUids before this write, [] on create) without re-checking
+    // friendship status; only a uid newly being ADDED must be an accepted
+    // friend right now. Without this grandfathering, unfriending someone
+    // already tagged on an old visit would permanently brick every future
+    // edit to that visit (even an unrelated field change), since the old
+    // rule re-validated the entire list on every write.
+    function isExistingOrNewlyAccepted(ownerUid, existingUids, uid) {
+      return existingUids.hasAll([uid]) || isAcceptedFriend(ownerUid, uid);
+    }
+
+    // Every uid in `uids` must be existing-or-an-accepted-friend of
+    // `ownerUid` — otherwise a visit doc (world-readable) could tag any real
+    // user as having attended a game without their consent. Rules can't loop
+    // over a variable-length list, so this is unrolled up to the field's own
+    // size cap (10); a request with more entries already fails that cap
+    // first.
+    function allAcceptedFriends(ownerUid, existingUids, uids) {
+      return uids.size() <= 0 || isExistingOrNewlyAccepted(ownerUid, existingUids, uids[0])
+        && (uids.size() <= 1 || isExistingOrNewlyAccepted(ownerUid, existingUids, uids[1]))
+        && (uids.size() <= 2 || isExistingOrNewlyAccepted(ownerUid, existingUids, uids[2]))
+        && (uids.size() <= 3 || isExistingOrNewlyAccepted(ownerUid, existingUids, uids[3]))
+        && (uids.size() <= 4 || isExistingOrNewlyAccepted(ownerUid, existingUids, uids[4]))
+        && (uids.size() <= 5 || isExistingOrNewlyAccepted(ownerUid, existingUids, uids[5]))
+        && (uids.size() <= 6 || isExistingOrNewlyAccepted(ownerUid, existingUids, uids[6]))
+        && (uids.size() <= 7 || isExistingOrNewlyAccepted(ownerUid, existingUids, uids[7]))
+        && (uids.size() <= 8 || isExistingOrNewlyAccepted(ownerUid, existingUids, uids[8]))
+        && (uids.size() <= 9 || isExistingOrNewlyAccepted(ownerUid, existingUids, uids[9]));
+    }
+
     function validProfile(data) {
       return data.keys().hasOnly(['username', 'displayName', 'photoURL'])
         && data.username is string
@@ -39,13 +84,51 @@ service cloud.firestore {
           && request.resource.data.stadiumId.size() > 0
           && request.resource.data.league in ['MLB', 'NFL']
           && request.resource.data.date is string
-          && request.resource.data.opponent is string;
-        // Updates may not move a visit to a different stadium.
+          && request.resource.data.opponent is string
+          // buddyIds/friendUids are optional (older clients may omit them)
+          // but capped so a malicious client can't stuff megabytes of ids
+          // into this world-readable doc. friendUids is capped at 10 (not
+          // 25) because rules can't loop over a variable-length list — every
+          // entry must be individually confirmed as an accepted friend via
+          // allAcceptedFriends, which is unrolled up to that cap.
+          && (!('buddyIds' in request.resource.data)
+              || (request.resource.data.buddyIds is list
+                  && request.resource.data.buddyIds.size() <= 25))
+          && (!('friendUids' in request.resource.data)
+              || (request.resource.data.friendUids is list
+                  && request.resource.data.friendUids.size() <= 10
+                  && allAcceptedFriends(uid, [], request.resource.data.friendUids)));
+        // Updates may not move a visit to a different stadium. friendUids
+        // already on the doc are grandfathered (see isExistingOrNewlyAccepted)
+        // so an update doesn't re-validate friendships that may since have
+        // ended — only newly-added uids must be accepted friends right now.
         allow update: if isOwner(uid)
           && request.resource.data.stadiumId == resource.data.stadiumId
           && request.resource.data.date is string
-          && request.resource.data.opponent is string;
+          && request.resource.data.opponent is string
+          && (!('buddyIds' in request.resource.data)
+              || (request.resource.data.buddyIds is list
+                  && request.resource.data.buddyIds.size() <= 25))
+          && (!('friendUids' in request.resource.data)
+              || (request.resource.data.friendUids is list
+                  && request.resource.data.friendUids.size() <= 10
+                  && allAcceptedFriends(
+                       uid,
+                       ('friendUids' in resource.data) ? resource.data.friendUids : [],
+                       request.resource.data.friendUids)));
         allow delete: if isOwner(uid);
+      }
+
+      // Buddies: named companions, strictly private to the owner (no world
+      // read — buddy names are personal data, unlike the public profile).
+      match /buddies/{buddyId} {
+        allow read, delete: if isOwner(uid);
+        allow create, update: if isOwner(uid)
+          && request.resource.data.keys().hasOnly(['name', 'createdAt'])
+          && request.resource.data.name is string
+          && request.resource.data.name.size() >= 1
+          && request.resource.data.name.size() <= 50
+          && request.resource.data.createdAt is number;
       }
     }
 

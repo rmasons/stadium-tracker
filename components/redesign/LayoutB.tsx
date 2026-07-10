@@ -6,8 +6,15 @@ import { StadiumMap, MAX_BOUNDS, BOUNDS_FIT_PADDING } from "@/components/Stadium
 import { MapDetailPanel } from "@/components/MapDetailPanel";
 import { SidebarB } from "./SidebarB";
 import { ZoomControls } from "./ZoomControls";
-import type { League, Stadium, Visit } from "@/lib/types";
+import type { Buddy, FriendProfile, League, Stadium, Visit } from "@/lib/types";
 import type { Summary } from "@/lib/stats";
+
+interface VisitInput {
+  date: string;
+  opponent: string;
+  buddyIds: string[];
+  friendUids: string[];
+}
 
 // Margin above the fitted-to-MAX_BOUNDS zoom before showing "reset view" —
 // the fitted zoom itself varies with the container's aspect ratio (mobile
@@ -24,9 +31,11 @@ interface Props {
   onFilterChange: (next: League | "ALL") => void;
   selectedVisits: Visit[];
   canEdit: boolean;
-  onAdd: (input: { date: string; opponent: string }) => Promise<void>;
+  buddies: Buddy[];
+  friends: FriendProfile[];
+  onAdd: (input: VisitInput) => Promise<void>;
   onRemove: (visitId: string) => Promise<void>;
-  onUpdate: (visitId: string, input: { date: string; opponent: string }) => Promise<void>;
+  onUpdate: (visitId: string, input: VisitInput) => Promise<void>;
   pendingFriendCount?: number;
 }
 
@@ -40,6 +49,8 @@ export function LayoutB({
   onFilterChange,
   selectedVisits,
   canEdit,
+  buddies,
+  friends,
   onAdd,
   onRemove,
   onUpdate,
@@ -130,6 +141,8 @@ export function LayoutB({
             stadium={selected}
             visits={selectedVisits}
             canEdit={canEdit}
+            buddies={buddies}
+            friends={friends}
             onClose={() => onSelect(null)}
             onAdd={onAdd}
             onRemove={onRemove}

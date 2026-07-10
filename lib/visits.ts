@@ -19,11 +19,21 @@ export interface VisitInput {
   /** ISO date (YYYY-MM-DD) or "" if unknown. */
   date: string;
   opponent: string;
+  /** Refs to users/{uid}/buddies/{buddyId} tagged as attendees. Defaults to []. */
+  buddyIds?: string[];
+  /** UIDs of friends tagged as attendees. Defaults to []. */
+  friendUids?: string[];
 }
 
-/** Map a Firestore doc into a Visit, attaching its id. */
+/** Map a Firestore doc into a Visit, attaching its id. Fills defaults for
+ *  older docs written before buddies/friends existed. */
 function toVisit(id: string, data: VisitData): Visit {
-  return { id, ...data };
+  return {
+    id,
+    ...data,
+    buddyIds: data.buddyIds ?? [],
+    friendUids: data.friendUids ?? [],
+  };
 }
 
 /** Subscribe to a user's visits in real time. Returns an unsubscribe fn. */
@@ -68,24 +78,34 @@ export async function addVisit(uid: string, input: VisitInput): Promise<string> 
     opponent: input.opponent.trim(),
     createdAt: now,
     updatedAt: now,
+    buddyIds: input.buddyIds ?? [],
+    friendUids: input.friendUids ?? [],
   };
   const ref = await addDoc(collection(db, "users", uid, "visits"), data);
   return ref.id;
 }
 
-/** Update the date/opponent of an existing visit. */
+/** Update the date/opponent (and optionally attendees) of an existing visit. */
 export async function updateVisit(
   uid: string,
   visitId: string,
-  patch: { date: string; opponent: string },
+  patch: {
+    date: string;
+    opponent: string;
+    buddyIds?: string[];
+    friendUids?: string[];
+  },
 ): Promise<void> {
   const db = getDb();
   if (!db) throw new Error("Firebase is not configured.");
-  await updateDoc(doc(db, "users", uid, "visits", visitId), {
+  const update: Record<string, unknown> = {
     date: patch.date,
     opponent: patch.opponent.trim(),
     updatedAt: Date.now(),
-  });
+  };
+  if (patch.buddyIds !== undefined) update.buddyIds = patch.buddyIds;
+  if (patch.friendUids !== undefined) update.friendUids = patch.friendUids;
+  await updateDoc(doc(db, "users", uid, "visits", visitId), update);
 }
 
 /** Remove a single visit by its id. */
