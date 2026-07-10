@@ -8,13 +8,7 @@ import { SidebarB } from "./SidebarB";
 import { ZoomControls } from "./ZoomControls";
 import type { Buddy, FriendProfile, League, Stadium, Visit } from "@/lib/types";
 import type { Summary } from "@/lib/stats";
-
-interface VisitInput {
-  date: string;
-  opponent: string;
-  buddyIds: string[];
-  friendUids: string[];
-}
+import type { VisitFormInput } from "@/lib/visits";
 
 // Margin above the fitted-to-MAX_BOUNDS zoom before showing "reset view" —
 // the fitted zoom itself varies with the container's aspect ratio (mobile
@@ -33,9 +27,9 @@ interface Props {
   canEdit: boolean;
   buddies: Buddy[];
   friends: FriendProfile[];
-  onAdd: (input: VisitInput) => Promise<void>;
+  onAdd: (input: VisitFormInput) => Promise<void>;
   onRemove: (visitId: string) => Promise<void>;
-  onUpdate: (visitId: string, input: VisitInput) => Promise<void>;
+  onUpdate: (visitId: string, input: VisitFormInput) => Promise<void>;
   pendingFriendCount?: number;
 }
 

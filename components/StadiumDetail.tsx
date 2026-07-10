@@ -4,13 +4,7 @@ import { useMemo, useState } from "react";
 import { LEAGUE_COLORS, opponentsFor } from "@/lib/stadiums";
 import { AttendeePicker } from "./AttendeePicker";
 import type { Buddy, FriendProfile, Stadium, Visit } from "@/lib/types";
-
-interface VisitInput {
-  date: string;
-  opponent: string;
-  buddyIds: string[];
-  friendUids: string[];
-}
+import type { VisitFormInput } from "@/lib/visits";
 
 interface Props {
   stadium: Stadium;
@@ -24,9 +18,9 @@ interface Props {
    *  visit rows. */
   friends: FriendProfile[];
   onClose: () => void;
-  onAdd: (input: VisitInput) => Promise<void>;
+  onAdd: (input: VisitFormInput) => Promise<void>;
   onRemove: (visitId: string) => Promise<void>;
-  onUpdate: (visitId: string, input: VisitInput) => Promise<void>;
+  onUpdate: (visitId: string, input: VisitFormInput) => Promise<void>;
 }
 
 /** Resolve a visit's buddyIds/friendUids to display names, silently

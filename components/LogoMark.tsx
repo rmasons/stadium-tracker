@@ -5,6 +5,8 @@
 // (the field) used in the 1A header; 1B's sidebar header omits it (see
 // design_handoff_redesign). Shares its shape with the browser tab favicon
 // (app/icon.svg) so the in-app logo and tab icon read as the same brand mark.
+import { useId } from "react";
+
 export function LogoMark({
   size = 30,
   radius,
@@ -14,7 +16,13 @@ export function LogoMark({
   radius?: number;
   dot?: boolean;
 }) {
-  const gradientId = "stadium-tracker-logo-gradient";
+  // useId() is unique per component instance, so this must be derived here
+  // (not hardcoded) — otherwise multiple <LogoMark> instances on one page
+  // emit duplicate gradient ids and every url(#...) resolves to the first
+  // definition. Strip the colons useId() wraps the id in (":r0:") since
+  // they're unnecessary noise in an id attribute, even though they're valid
+  // in both id and url(#...) as-is.
+  const gradientId = `logo-gradient-${useId().replace(/[^a-zA-Z0-9_-]/g, "")}`;
   const center = size / 2;
   const trackWidth = size * 0.64;
   const trackHeight = size * 0.36;

@@ -4,28 +4,14 @@ import { useEffect, useMemo, useState } from "react";
 import { LayoutB } from "@/components/redesign/LayoutB";
 import { useAuth } from "@/components/AuthProvider";
 import { subscribeToVisits, addVisit, removeVisit, updateVisit } from "@/lib/visits";
+import type { VisitFormInput } from "@/lib/visits";
 import { subscribeToBuddies } from "@/lib/buddies";
-import { otherMember, pendingIncomingCount, subscribeToFriendships } from "@/lib/friends";
-import { getProfile } from "@/lib/username";
+import { pendingIncomingCount, subscribeToFriendships } from "@/lib/friends";
+import { useFriendProfiles } from "@/lib/useFriendProfiles";
 import { summarize } from "@/lib/stats";
-import type {
-  Buddy,
-  Friendship,
-  FriendProfile,
-  League,
-  PublicProfile,
-  Stadium,
-  Visit,
-} from "@/lib/types";
+import type { Buddy, Friendship, League, Stadium, Visit } from "@/lib/types";
 
 type LeagueFilter = League | "ALL";
-
-interface VisitInput {
-  date: string;
-  opponent: string;
-  buddyIds: string[];
-  friendUids: string[];
-}
 
 export default function HomePage() {
   const { user, configured } = useAuth();
@@ -34,10 +20,6 @@ export default function HomePage() {
   const [leagueFilter, setLeagueFilter] = useState<LeagueFilter>("ALL");
   const [friendships, setFriendships] = useState<Friendship[]>([]);
   const [buddies, setBuddies] = useState<Buddy[]>([]);
-  // uid -> profile (null = fetched but missing, e.g. deleted account).
-  const [friendProfiles, setFriendProfiles] = useState<
-    Record<string, PublicProfile | null>
-  >({});
 
   useEffect(() => {
     if (!user) {
@@ -68,34 +50,7 @@ export default function HomePage() {
     return subscribeToBuddies(user.uid, setBuddies);
   }, [user]);
 
-  // Resolve accepted friends' public profiles, lazily and cached for the life
-  // of the component. Mirrors FriendManager's profile-resolution effect.
-  useEffect(() => {
-    if (!user) {
-      // eslint-disable-next-line react-hooks/set-state-in-effect
-      setFriendProfiles({});
-      return;
-    }
-    let cancelled = false;
-    const uid = user.uid;
-    const unknown = friendships
-      .filter((f) => f.status === "accepted")
-      .map((f) => otherMember(f, uid))
-      .filter((other) => !(other in friendProfiles));
-    if (unknown.length === 0) return;
-    void Promise.all(
-      unknown.map(async (other) => [other, await getProfile(other)] as const),
-    ).then((entries) => {
-      if (cancelled) return;
-      setFriendProfiles((prev) => ({ ...prev, ...Object.fromEntries(entries) }));
-    });
-    return () => {
-      cancelled = true;
-    };
-    // `friendProfiles` is deliberately omitted: it's the cache this effect
-    // fills, and re-running on its own writes would just re-diff to empty.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [friendships, user]);
+  const { friends } = useFriendProfiles(user?.uid, friendships);
 
   const summary = useMemo(() => summarize(visits), [visits]);
   const visitedIds = useMemo(
@@ -110,20 +65,8 @@ export default function HomePage() {
     () => (user ? pendingIncomingCount(user.uid, friendships) : 0),
     [user, friendships],
   );
-  const friends = useMemo<FriendProfile[]>(() => {
-    if (!user) return [];
-    const uid = user.uid;
-    return friendships
-      .filter((f) => f.status === "accepted")
-      .map((f) => otherMember(f, uid))
-      .map((other) => {
-        const profile = friendProfiles[other];
-        return profile ? { uid: other, ...profile } : null;
-      })
-      .filter((f): f is FriendProfile => f !== null);
-  }, [user, friendships, friendProfiles]);
 
-  async function handleAdd(input: VisitInput) {
+  async function handleAdd(input: VisitFormInput) {
     if (!user || !selected) return;
     await addVisit(user.uid, { stadiumId: selected.id, ...input });
   }
@@ -133,7 +76,7 @@ export default function HomePage() {
     await removeVisit(user.uid, visitId);
   }
 
-  async function handleUpdate(visitId: string, input: VisitInput) {
+  async function handleUpdate(visitId: string, input: VisitFormInput) {
     if (!user) return;
     await updateVisit(user.uid, visitId, input);
   }

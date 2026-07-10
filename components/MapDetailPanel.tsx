@@ -5,13 +5,7 @@ import { StadiumDetail } from "./StadiumDetail";
 import { getLogoUrl } from "@/lib/logos";
 import { getPhotoUrl } from "@/lib/photos";
 import type { Buddy, FriendProfile, Stadium, Visit } from "@/lib/types";
-
-interface VisitInput {
-  date: string;
-  opponent: string;
-  buddyIds: string[];
-  friendUids: string[];
-}
+import type { VisitFormInput } from "@/lib/visits";
 
 interface Props {
   stadium: Stadium | null;
@@ -20,9 +14,9 @@ interface Props {
   buddies: Buddy[];
   friends: FriendProfile[];
   onClose: () => void;
-  onAdd: (input: VisitInput) => Promise<void>;
+  onAdd: (input: VisitFormInput) => Promise<void>;
   onRemove: (visitId: string) => Promise<void>;
-  onUpdate: (visitId: string, input: VisitInput) => Promise<void>;
+  onUpdate: (visitId: string, input: VisitFormInput) => Promise<void>;
   emptyHint?: string;
 }
 

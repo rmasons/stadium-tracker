@@ -69,16 +69,6 @@ export function subscribeToFriendships(
   );
 }
 
-/** Subscribe to the count of incoming pending requests (for the nav badge). */
-export function subscribeToPendingCount(
-  uid: string,
-  onCount: (count: number) => void,
-): () => void {
-  return subscribeToFriendships(uid, (friendships) =>
-    onCount(pendingIncomingCount(uid, friendships)),
-  );
-}
-
 /** Send a friend request by username. Throws a user-readable Error when the
  *  username is unknown, is the caller's own, or a friendship/request between
  *  the pair already exists. */

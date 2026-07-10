@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { MAX_BUDDY_NAME_LENGTH } from "@/lib/limits";
 import type { Buddy } from "@/lib/types";
 
 interface Props {
@@ -10,9 +11,6 @@ interface Props {
   onRename: (buddyId: string, name: string) => Promise<void>;
 }
 
-// Matches the Firestore rules cap on buddies/{buddyId}.name.
-const MAX_BUDDY_NAME_LENGTH = 50;
-
 /**
  * Buddies card on /tracker: an add form plus a list of existing buddies with
  * inline rename and remove. Buddies are private, account-less companions —
@@ -21,6 +19,9 @@ const MAX_BUDDY_NAME_LENGTH = 50;
 export function BuddyManager({ buddies, onAdd, onRemove, onRename }: Props) {
   const [name, setName] = useState("");
   const [busy, setBusy] = useState(false);
+  // Row-scoped busy state for rename/remove so one row's in-flight action
+  // doesn't disable every other row's controls.
+  const [busyId, setBusyId] = useState<string | null>(null);
   const [msg, setMsg] = useState<string | null>(null);
 
   // Inline edit state — only one row editable at a time.
@@ -28,6 +29,7 @@ export function BuddyManager({ buddies, onAdd, onRemove, onRename }: Props) {
   const [editName, setEditName] = useState("");
 
   async function add() {
+    if (busy) return;
     const trimmed = name.trim();
     if (!trimmed) return;
     if (trimmed.length > MAX_BUDDY_NAME_LENGTH) {
@@ -57,13 +59,14 @@ export function BuddyManager({ buddies, onAdd, onRemove, onRename }: Props) {
   }
 
   async function saveEdit(buddyId: string) {
+    if (busyId !== null) return;
     const trimmed = editName.trim();
     if (!trimmed) return;
     if (trimmed.length > MAX_BUDDY_NAME_LENGTH) {
       setMsg(`Name must be ${MAX_BUDDY_NAME_LENGTH} characters or fewer.`);
       return;
     }
-    setBusy(true);
+    setBusyId(buddyId);
     setMsg(null);
     try {
       await onRename(buddyId, trimmed);
@@ -71,19 +74,20 @@ export function BuddyManager({ buddies, onAdd, onRemove, onRename }: Props) {
     } catch (err) {
       setMsg(err instanceof Error ? err.message : "Could not rename buddy.");
     } finally {
-      setBusy(false);
+      setBusyId(null);
     }
   }
 
   async function remove(buddyId: string) {
-    setBusy(true);
+    if (busyId !== null) return;
+    setBusyId(buddyId);
     setMsg(null);
     try {
       await onRemove(buddyId);
     } catch (err) {
       setMsg(err instanceof Error ? err.message : "Could not remove buddy.");
     } finally {
-      setBusy(false);
+      setBusyId(null);
     }
   }
 
@@ -91,8 +95,8 @@ export function BuddyManager({ buddies, onAdd, onRemove, onRename }: Props) {
     <div className="mt-6 rounded-lg border border-border bg-card p-4">
       <h2 className="text-sm font-semibold">Buddies</h2>
       <p className="mt-1 text-xs text-muted">
-        People you go to games with — they don&apos;t need an account. Only
-        you can see them.
+        People you go to games with — they don&apos;t need an account. Only you
+        can see them.
       </p>
 
       <div className="mt-2 flex items-center gap-2">
@@ -136,14 +140,14 @@ export function BuddyManager({ buddies, onAdd, onRemove, onRename }: Props) {
                   <div className="flex shrink-0 gap-2">
                     <button
                       onClick={cancelEdit}
-                      disabled={busy}
+                      disabled={busyId === buddy.id}
                       className="rounded-md border border-border px-3 py-1.5 text-xs font-medium hover:bg-background disabled:opacity-40"
                     >
                       Cancel
                     </button>
                     <button
                       onClick={() => void saveEdit(buddy.id)}
-                      disabled={busy}
+                      disabled={busyId === buddy.id}
                       className="rounded-md bg-foreground px-3 py-1.5 text-xs font-medium text-background hover:opacity-90 disabled:opacity-40"
                     >
                       Save
@@ -161,14 +165,14 @@ export function BuddyManager({ buddies, onAdd, onRemove, onRename }: Props) {
                   <div className="flex shrink-0 gap-2">
                     <button
                       onClick={() => startEdit(buddy)}
-                      disabled={busy}
+                      disabled={busyId === buddy.id}
                       className="rounded-md border border-border px-3 py-1.5 text-xs font-medium hover:bg-background disabled:opacity-40"
                     >
                       Rename
                     </button>
                     <button
                       onClick={() => void remove(buddy.id)}
-                      disabled={busy}
+                      disabled={busyId === buddy.id}
                       className="rounded-md border border-border px-3 py-1.5 text-xs font-medium hover:bg-background disabled:opacity-40"
                     >
                       Remove
