@@ -58,6 +58,46 @@ service cloud.firestore {
         && (uids.size() <= 9 || isExistingOrNewlyAccepted(ownerUid, existingUids, uids[9]));
     }
 
+    // A buddyId is a Firestore auto-id (~20 chars); 64 is a generous bound.
+    // Bounding both type and size stops a signed-in owner from writing e.g.
+    // buddyIds = [one ~1MB string] or a list of large maps/booleans — the
+    // list-level size() <= 25 cap alone says nothing about what's inside
+    // each slot.
+    function validBuddyId(id) {
+      return id is string && id.size() >= 1 && id.size() <= 64;
+    }
+
+    // Every entry in `ids` must be a validBuddyId. Rules can't loop over a
+    // variable-length list, so this is unrolled up to the field's own size
+    // cap (25); a request with more entries already fails that cap first.
+    function allValidBuddyIds(ids) {
+      return ids.size() <= 0 || validBuddyId(ids[0])
+        && (ids.size() <= 1 || validBuddyId(ids[1]))
+        && (ids.size() <= 2 || validBuddyId(ids[2]))
+        && (ids.size() <= 3 || validBuddyId(ids[3]))
+        && (ids.size() <= 4 || validBuddyId(ids[4]))
+        && (ids.size() <= 5 || validBuddyId(ids[5]))
+        && (ids.size() <= 6 || validBuddyId(ids[6]))
+        && (ids.size() <= 7 || validBuddyId(ids[7]))
+        && (ids.size() <= 8 || validBuddyId(ids[8]))
+        && (ids.size() <= 9 || validBuddyId(ids[9]))
+        && (ids.size() <= 10 || validBuddyId(ids[10]))
+        && (ids.size() <= 11 || validBuddyId(ids[11]))
+        && (ids.size() <= 12 || validBuddyId(ids[12]))
+        && (ids.size() <= 13 || validBuddyId(ids[13]))
+        && (ids.size() <= 14 || validBuddyId(ids[14]))
+        && (ids.size() <= 15 || validBuddyId(ids[15]))
+        && (ids.size() <= 16 || validBuddyId(ids[16]))
+        && (ids.size() <= 17 || validBuddyId(ids[17]))
+        && (ids.size() <= 18 || validBuddyId(ids[18]))
+        && (ids.size() <= 19 || validBuddyId(ids[19]))
+        && (ids.size() <= 20 || validBuddyId(ids[20]))
+        && (ids.size() <= 21 || validBuddyId(ids[21]))
+        && (ids.size() <= 22 || validBuddyId(ids[22]))
+        && (ids.size() <= 23 || validBuddyId(ids[23]))
+        && (ids.size() <= 24 || validBuddyId(ids[24]));
+    }
+
     function validProfile(data) {
       return data.keys().hasOnly(['username', 'displayName', 'photoURL'])
         && data.username is string
@@ -87,13 +127,20 @@ service cloud.firestore {
           && request.resource.data.opponent is string
           // buddyIds/friendUids are optional (older clients may omit them)
           // but capped so a malicious client can't stuff megabytes of ids
-          // into this world-readable doc. friendUids is capped at 10 (not
-          // 25) because rules can't loop over a variable-length list — every
-          // entry must be individually confirmed as an accepted friend via
-          // allAcceptedFriends, which is unrolled up to that cap.
+          // into this world-readable doc. It's not enough to cap the list's
+          // size() — each entry must also be individually validated, or a
+          // signed-in owner could still write e.g. buddyIds = [one ~1MB
+          // string] or a list of large maps/booleans. buddyIds is checked
+          // entry-by-entry via allValidBuddyIds (each must be a bounded
+          // string); friendUids is capped at 10 (not 25) because every
+          // entry must additionally be individually confirmed as an
+          // accepted friend via allAcceptedFriends — both helpers unrolled
+          // to their respective caps since rules can't loop over a
+          // variable-length list.
           && (!('buddyIds' in request.resource.data)
               || (request.resource.data.buddyIds is list
-                  && request.resource.data.buddyIds.size() <= 25))
+                  && request.resource.data.buddyIds.size() <= 25
+                  && allValidBuddyIds(request.resource.data.buddyIds)))
           && (!('friendUids' in request.resource.data)
               || (request.resource.data.friendUids is list
                   && request.resource.data.friendUids.size() <= 10
@@ -108,7 +155,8 @@ service cloud.firestore {
           && request.resource.data.opponent is string
           && (!('buddyIds' in request.resource.data)
               || (request.resource.data.buddyIds is list
-                  && request.resource.data.buddyIds.size() <= 25))
+                  && request.resource.data.buddyIds.size() <= 25
+                  && allValidBuddyIds(request.resource.data.buddyIds)))
           && (!('friendUids' in request.resource.data)
               || (request.resource.data.friendUids is list
                   && request.resource.data.friendUids.size() <= 10
